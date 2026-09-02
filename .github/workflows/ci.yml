@@ -47,7 +47,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Gitleaks Scan
-        uses: zricethezav/gitleaks-action@master
+        uses: zricethezav/gitleaks-action@v2
 
       - name: Install uv
         if: needs.detect-changes.outputs.security == 'true'

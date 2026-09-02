@@ -259,7 +259,7 @@ def run_trivy(repo_root: Path, target_dir: str = "infra/") -> list[Finding]:
 def parse_trivy_json(data: dict[str, Any]) -> list[Finding]:
     """Parse trivy JSON object into a list of Finding objects."""
     findings: list[Finding] = []
-    results = data.get("Results", [])
+    results = data.get("Results") or []
     for res in results:
         target = res.get("Target", "")
 
