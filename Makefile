@@ -43,3 +43,8 @@ victim-up: check-prereqs
 victim-down: check-prereqs
 	helm uninstall opentelemetry-demo -n victim || true
 	kubectl delete namespace victim --ignore-not-found
+
+.PHONY: victim-smoke
+victim-smoke: check-prereqs
+	./scripts/smoke-test.sh
+
