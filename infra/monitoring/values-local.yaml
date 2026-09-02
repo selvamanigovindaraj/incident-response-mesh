@@ -9,6 +9,9 @@ grafana:
   # Set default password for local development
   adminPassword: "prom-operator"
 
+nodeExporter:
+  enabled: false
+
 prometheus:
   prometheusSpec:
     # Scrape configuration for the victim namespace
