@@ -8,10 +8,11 @@ _scenarios_dir = os.path.join(_repo_root, "scenarios")
 if _scenarios_dir not in sys.path:
     sys.path.insert(0, _scenarios_dir)
 
-import time
 import subprocess
-import yaml
+import time
+
 import requests
+import yaml
 
 try:
     from schema import ScenarioLabel
@@ -19,13 +20,12 @@ except ImportError:
     from scenarios.schema import ScenarioLabel
 
 
-
 def run_cmd(cmd):
     if isinstance(cmd, list):
         print(f"Running: {' '.join(cmd)}")
     else:
         print(f"Running: {cmd}")
-    result = subprocess.run(cmd, shell=False, capture_output=True, text=True)
+    result = subprocess.run(cmd, check=False, capture_output=True, text=True)
     if result.returncode != 0:
         print(f"Error: {result.stderr}")
     return result.returncode == 0
@@ -61,7 +61,7 @@ def check_alerts(expected, red_herrings):
 
         print("All expected and red-herring alerts are actively firing!")
         return True
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         print(f"Failed to query Prometheus API: {e}")
         return False
 
@@ -89,7 +89,7 @@ def main():
         duration = scenario.duration_seconds
         expected_alerts = scenario.expected_alerts
         red_herrings = scenario.red_herring_signals
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         print(f"Validation error for scenario {scenario_id}: {e}")
         sys.exit(1)
 

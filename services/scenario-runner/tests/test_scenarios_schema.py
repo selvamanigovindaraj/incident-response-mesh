@@ -1,13 +1,15 @@
 import os
 import sys
-import tempfile
-import yaml
+
 import pytest
+import yaml
 from pydantic import ValidationError
 
 # Ensure root of repo is in sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../scenarios")))
+sys.path.insert(
+    0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../scenarios"))
+)
 
 from scenarios.schema import RootCause, ScenarioLabel
 from scenarios.validate import main as validate_main
@@ -136,7 +138,7 @@ def test_scenario_label_invalid_severity():
 def test_validate_script_success(monkeypatch, tmp_path):
     labels_dir = tmp_path / "scenarios" / "labels"
     labels_dir.mkdir(parents=True)
-    
+
     valid_label = {
         "scenario_id": "infra-pod-oom",
         "category": "infra",
@@ -153,7 +155,7 @@ def test_validate_script_success(monkeypatch, tmp_path):
     }
     with open(labels_dir / "infra-pod-oom.yaml", "w") as f:
         yaml.dump(valid_label, f)
-        
+
     monkeypatch.chdir(tmp_path)
     # Should run without sys.exit(1)
     validate_main()
@@ -162,14 +164,14 @@ def test_validate_script_success(monkeypatch, tmp_path):
 def test_validate_script_failure_on_invalid_yaml(monkeypatch, tmp_path):
     labels_dir = tmp_path / "scenarios" / "labels"
     labels_dir.mkdir(parents=True)
-    
+
     invalid_label = {
         "scenario_id": "bad-scenario",
         "category": "invalid_category",
     }
     with open(labels_dir / "bad.yaml", "w") as f:
         yaml.dump(invalid_label, f)
-        
+
     monkeypatch.chdir(tmp_path)
     with pytest.raises(SystemExit) as exc_info:
         validate_main()

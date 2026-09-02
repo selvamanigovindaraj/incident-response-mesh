@@ -46,7 +46,7 @@ victim-down: check-prereqs
 
 .PHONY: victim-smoke
 victim-smoke: check-prereqs
-	./scripts/smoke-test.sh
+	./services/scenario-runner/scripts/smoke-test.sh
 
 .PHONY: monitoring-up
 monitoring-up: check-prereqs
@@ -67,7 +67,7 @@ monitoring-down: check-prereqs
 
 .PHONY: generate-fixtures
 generate-fixtures: check-prereqs
-	./scripts/generate-alert-fixtures.sh
+	cd services/scenario-runner && ./scripts/generate-alert-fixtures.sh
 
 .PHONY: chaos-up
 chaos-up: check-prereqs
@@ -92,10 +92,13 @@ chaos-dashboard: check-prereqs
 .PHONY: chaos
 chaos: check-prereqs
 	@if [ -z "$(RUN)" ]; then echo "Error: Must specify experiment (e.g., make chaos RUN=pod-kill)"; exit 1; fi
-	./scripts/run-chaos.sh $(RUN)
+	./services/scenario-runner/scripts/run-chaos.sh $(RUN)
 
 .PHONY: scenario
 scenario:
 	@if [ -z "$(RUN)" ]; then echo "Usage: make scenario RUN=<id>"; exit 1; fi
-	pip install pydantic pyyaml requests > /dev/null 2>&1 || true
-	python3 scripts/run-scenario.py $(RUN)
+	cd services/scenario-runner && uv run python scripts/run-scenario.py $(RUN)
+
+.PHONY: validate
+validate:
+	cd services/scenario-runner && uv run python scenarios/validate.py

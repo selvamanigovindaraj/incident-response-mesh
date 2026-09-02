@@ -1,15 +1,16 @@
 import importlib.util
 import os
 import sys
-import tempfile
-import yaml
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
+import yaml
 
 # Ensure root of repo is in sys.path
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if REPO_ROOT not in sys.path:
     sys.path.insert(0, REPO_ROOT)
+
 
 def load_run_scenario_module():
     script_path = os.path.join(REPO_ROOT, "scripts", "run-scenario.py")
@@ -196,8 +197,19 @@ def test_main_full_workflow_success(run_scenario, monkeypatch, tmp_path):
         run_scenario.main()
     assert exc_info.value.code == 0
 
-    assert ["kubectl", "apply", "-f", "scenarios/manifests/test-manifest.yaml"] in commands_run
-    assert ["kubectl", "delete", "-f", "scenarios/manifests/test-manifest.yaml", "--ignore-not-found"] in commands_run
+    assert [
+        "kubectl",
+        "apply",
+        "-f",
+        "scenarios/manifests/test-manifest.yaml",
+    ] in commands_run
+    assert [
+        "kubectl",
+        "delete",
+        "-f",
+        "scenarios/manifests/test-manifest.yaml",
+        "--ignore-not-found",
+    ] in commands_run
 
 
 def test_main_manifest_apply_failure(run_scenario, monkeypatch, tmp_path):
@@ -230,9 +242,12 @@ def test_main_manifest_apply_failure(run_scenario, monkeypatch, tmp_path):
     def mock_run_cmd(cmd):
         commands_run.append(cmd)
         # First manifest apply succeeds, second manifest apply fails
-        if cmd == ["kubectl", "apply", "-f", "scenarios/manifests/test-manifest-1.yaml"]:
-            return True
-        return False
+        return cmd == [
+            "kubectl",
+            "apply",
+            "-f",
+            "scenarios/manifests/test-manifest-1.yaml",
+        ]
 
     monkeypatch.setattr(run_scenario, "run_cmd", mock_run_cmd)
     monkeypatch.setattr(sys, "argv", ["run-scenario.py", "test-scenario"])
@@ -241,12 +256,34 @@ def test_main_manifest_apply_failure(run_scenario, monkeypatch, tmp_path):
         run_scenario.main()
     assert exc_info.value.code == 1
 
-    assert ["kubectl", "apply", "-f", "scenarios/manifests/test-manifest-1.yaml"] in commands_run
-    assert ["kubectl", "apply", "-f", "scenarios/manifests/test-manifest-2.yaml"] in commands_run
+    assert [
+        "kubectl",
+        "apply",
+        "-f",
+        "scenarios/manifests/test-manifest-1.yaml",
+    ] in commands_run
+    assert [
+        "kubectl",
+        "apply",
+        "-f",
+        "scenarios/manifests/test-manifest-2.yaml",
+    ] in commands_run
     # Should clean up the already applied manifest (manifest-1)
-    assert ["kubectl", "delete", "-f", "scenarios/manifests/test-manifest-1.yaml", "--ignore-not-found"] in commands_run
+    assert [
+        "kubectl",
+        "delete",
+        "-f",
+        "scenarios/manifests/test-manifest-1.yaml",
+        "--ignore-not-found",
+    ] in commands_run
     # Should NOT attempt to delete the manifest that failed to apply (manifest-2)
-    assert ["kubectl", "delete", "-f", "scenarios/manifests/test-manifest-2.yaml", "--ignore-not-found"] not in commands_run
+    assert [
+        "kubectl",
+        "delete",
+        "-f",
+        "scenarios/manifests/test-manifest-2.yaml",
+        "--ignore-not-found",
+    ] not in commands_run
 
 
 def test_main_validation_failure_cleans_up(run_scenario, monkeypatch, tmp_path):
@@ -286,5 +323,16 @@ def test_main_validation_failure_cleans_up(run_scenario, monkeypatch, tmp_path):
         run_scenario.main()
     assert exc_info.value.code == 1
 
-    assert ["kubectl", "apply", "-f", "scenarios/manifests/test-manifest.yaml"] in commands_run
-    assert ["kubectl", "delete", "-f", "scenarios/manifests/test-manifest.yaml", "--ignore-not-found"] in commands_run
+    assert [
+        "kubectl",
+        "apply",
+        "-f",
+        "scenarios/manifests/test-manifest.yaml",
+    ] in commands_run
+    assert [
+        "kubectl",
+        "delete",
+        "-f",
+        "scenarios/manifests/test-manifest.yaml",
+        "--ignore-not-found",
+    ] in commands_run

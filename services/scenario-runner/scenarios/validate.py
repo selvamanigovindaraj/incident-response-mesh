@@ -1,5 +1,6 @@
 import os
 import sys
+
 import yaml
 
 try:
@@ -28,7 +29,7 @@ def main():
                 data = yaml.safe_load(f)
             ScenarioLabel(**data)
             print(f"✅ {filename} passed validation.")
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             print(f"❌ {filename} failed validation:\n{e}")
             failed = True
 
