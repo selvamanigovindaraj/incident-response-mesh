@@ -29,7 +29,7 @@ trap "kill $PF_PID 2>/dev/null || true" EXIT
 sleep 3
 
 # Query Jaeger API for traces from the frontend service
-TRACES=$(curl -s "http://localhost:16686/api/traces?service=frontend")
+TRACES=$(curl -s "http://localhost:16686/jaeger/ui/api/traces?service=frontend")
 TRACE_COUNT=$(echo "$TRACES" | jq '.data | length')
 
 if [ "$TRACE_COUNT" -gt 0 ]; then
