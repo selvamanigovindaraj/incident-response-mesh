@@ -1,20 +1,26 @@
 components:
   accounting:
+    envOverrides:
+    - name: JAVA_TOOL_OPTIONS
+      value: -Xmx300m -Xms300m
     resources:
       limits:
-        cpu: 200m
-        memory: 250Mi
+        cpu: 300m
+        memory: 500Mi
       requests:
         cpu: 50m
-        memory: 50Mi
+        memory: 100Mi
   ad:
+    envOverrides:
+    - name: JAVA_TOOL_OPTIONS
+      value: -Xmx300m -Xms300m
     resources:
       limits:
-        cpu: 200m
-        memory: 250Mi
+        cpu: 300m
+        memory: 500Mi
       requests:
         cpu: 50m
-        memory: 50Mi
+        memory: 100Mi
   agent:
     resources:
       limits:
@@ -121,13 +127,16 @@ components:
         cpu: 50m
         memory: 50Mi
   kafka:
+    envOverrides:
+    - name: KAFKA_HEAP_OPTS
+      value: -Xmx250m -Xms250m
     resources:
       limits:
-        cpu: 200m
-        memory: 250Mi
+        cpu: 300m
+        memory: 400Mi
       requests:
         cpu: 50m
-        memory: 50Mi
+        memory: 100Mi
   load-generator:
     resources:
       limits:
@@ -210,5 +219,22 @@ components:
         memory: 50Mi
 grafana:
   enabled: false
+opensearch:
+  opensearchJavaOpts: -Xmx512m -Xms512m
+  resources:
+    limits:
+      cpu: 500m
+      memory: 700Mi
+opentelemetry-collector:
+  mode: deployment
+  presets:
+    clusterMetrics:
+      enabled: false
+    hostMetrics:
+      enabled: false
+    kubeletMetrics:
+      enabled: false
+    kubernetesAttributes:
+      enabled: false
 prometheus:
   enabled: false
