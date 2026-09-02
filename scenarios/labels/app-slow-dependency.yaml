@@ -1,0 +1,13 @@
+scenario_id: app-slow-dependency
+category: app
+manifests: []
+root_cause:
+  component: shipping
+  failure_mode: slow_third_party
+expected_severity: warning
+expected_alerts:
+  - ShippingHighLatency
+red_herring_signals: []
+valid_remediations:
+  - Disable third party integration flag
+duration_seconds: 60

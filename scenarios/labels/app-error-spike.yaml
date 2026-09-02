@@ -1,0 +1,13 @@
+scenario_id: app-error-spike
+category: app
+manifests: []
+root_cause:
+  component: checkout
+  failure_mode: forced_errors
+expected_severity: critical
+expected_alerts:
+  - CheckoutErrorSpike
+red_herring_signals: []
+valid_remediations:
+  - Rollback faulty feature flag
+duration_seconds: 60

@@ -1,0 +1,13 @@
+scenario_id: app-feature-crash
+category: app
+manifests: []
+root_cause:
+  component: frontend
+  failure_mode: unhandled_exception
+expected_severity: critical
+expected_alerts:
+  - FrontendServiceDown
+red_herring_signals: []
+valid_remediations:
+  - Disable new feature flag immediately
+duration_seconds: 60

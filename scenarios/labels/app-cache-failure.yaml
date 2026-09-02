@@ -1,0 +1,13 @@
+scenario_id: app-cache-failure
+category: app
+manifests: []
+root_cause:
+  component: recommendation
+  failure_mode: cache_disabled
+expected_severity: warning
+expected_alerts:
+  - RecommendationHighLatency
+red_herring_signals: []
+valid_remediations:
+  - Re-enable cache feature flag
+duration_seconds: 60

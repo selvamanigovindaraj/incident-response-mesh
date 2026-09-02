@@ -1,0 +1,13 @@
+scenario_id: app-invalid-config
+category: app
+manifests: []
+root_cause:
+  component: product-catalog
+  failure_mode: malformed_json
+expected_severity: warning
+expected_alerts:
+  - CatalogServiceCrash
+red_herring_signals: []
+valid_remediations:
+  - Revert configuration change
+duration_seconds: 60
