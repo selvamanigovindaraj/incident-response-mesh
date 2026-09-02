@@ -9,7 +9,7 @@ echo "==> Triggering Failure to Generate Alerts <=="
 kubectl set image deploy/frontend-proxy frontend-proxy="nginx:invalid-tag-123" -n victim
 
 echo "Waiting for Alertmanager to fire (this may take up to 3 minutes)..."
-ECHO_POD=$(kubectl get pod -l app=alert-echo -n monitoring -o jsonpath='{.items[0].metadata.name}')
+ECHO_POD=$(kubectl get pod -l app=alert-echo -n monitoring --field-selector=status.phase=Running -o jsonpath='{.items[0].metadata.name}')
 
 # We use timeout so this doesn't hang forever if it fails
 timeout 180 awk '
