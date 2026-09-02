@@ -1,0 +1,14 @@
+chaosDaemon:
+  # k3d runs on containerd, not docker
+  runtime: containerd
+  socketPath: /run/k3s/containerd/containerd.sock
+
+controllerManager:
+  # CRITICAL: Restrict Chaos Mesh to ONLY affect the victim namespace
+  targetNamespace: victim
+
+dashboard:
+  create: true
+  # We will access this via port-forward, no ingress needed
+  ingress:
+    enabled: false
