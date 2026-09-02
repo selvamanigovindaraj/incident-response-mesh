@@ -61,7 +61,7 @@ jobs:
 
       - name: Install Trivy
         if: needs.detect-changes.outputs.security == 'true'
-        uses: aquasecurity/setup-trivy@v0.2.2
+        uses: aquasecurity/setup-trivy@v0.3.1
 
       - name: Run Security Audit
         if: needs.detect-changes.outputs.security == 'true'
@@ -118,6 +118,6 @@ jobs:
       - name: Build
         run: docker build -t hello-world:test -f services/hello-world/Dockerfile .
       - name: Install Trivy
-        uses: aquasecurity/setup-trivy@v0.2.2
+        uses: aquasecurity/setup-trivy@v0.3.1
       - name: Scan Container Image
         run: trivy image hello-world:test --exit-code 1 --severity HIGH,CRITICAL
