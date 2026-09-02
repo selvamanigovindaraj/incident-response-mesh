@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alert-echo
+  namespace: monitoring
+  labels:
+    app: alert-echo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: alert-echo
+  template:
+    metadata:
+      labels:
+        app: alert-echo
+    spec:
+      containers:
+      - name: python-echo
+        image: python:3.11-alpine
+        # A tiny python server that prints the POST body to stdout
+        command: ["python3", "-c"]
+        args:
+        - |
+          import http.server
+          class EchoHandler(http.server.BaseHTTPRequestHandler):
+              def do_POST(self):
+                  content_len = int(self.headers.get('Content-Length', 0))
+                  post_body = self.rfile.read(content_len)
+                  print("--- ALERT PAYLOAD RECEIVED ---")
+                  print(post_body.decode('utf-8'))
+                  print("------------------------------")
+                  self.send_response(200)
+                  self.end_headers()
+          http.server.HTTPServer(('', 8080), EchoHandler).serve_forever()
+        ports:
+        - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: alert-echo
+  namespace: monitoring
+spec:
+  selector:
+    app: alert-echo
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
