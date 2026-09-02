@@ -1,0 +1,16 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: recommendation-delay
+  namespace: victim
+spec:
+  action: delay
+  mode: all
+  selector:
+    namespaces:
+      - victim
+    labelSelectors:
+      app.kubernetes.io/name: recommendation
+  delay:
+    latency: "300ms"
+  duration: "60s"

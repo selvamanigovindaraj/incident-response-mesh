@@ -1,0 +1,22 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: frontend-cart-partition
+  namespace: victim
+spec:
+  action: partition
+  mode: all
+  selector:
+    namespaces:
+      - victim
+    labelSelectors:
+      app.kubernetes.io/name: frontend
+  direction: both
+  target:
+    selector:
+      namespaces:
+        - victim
+      labelSelectors:
+        app.kubernetes.io/name: cart
+    mode: all
+  duration: "60s"

@@ -1,0 +1,14 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: PodChaos
+metadata:
+  name: frontend-proxy-kill
+  namespace: victim
+spec:
+  action: pod-kill
+  mode: one
+  duration: "60s"
+  selector:
+    namespaces:
+      - victim
+    labelSelectors:
+      app.kubernetes.io/name: frontend-proxy
