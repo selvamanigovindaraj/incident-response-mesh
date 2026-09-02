@@ -4,14 +4,12 @@ set -eo pipefail
 mkdir -p tests/fixtures/alerts
 
 echo "==> Triggering Failure to Generate Alerts <=="
-# We trigger a replicas mismatch by specifying a broken image, 
-# which causes ImagePullBackOff (available=0, spec=1).
 kubectl set image deploy/frontend-proxy frontend-proxy="nginx:invalid-tag-123" -n victim
 
 echo "Waiting for Alertmanager to fire (this may take up to 3 minutes)..."
-ECHO_POD=$(kubectl get pod -l app=alert-echo -n monitoring --field-selector=status.phase=Running -o jsonpath='{.items[0].metadata.name}')
+ECHO_POD=$(kubectl get pod -l app=alert-echo -n monitoring | grep Running | awk '{print $1}' | head -n 1)
+echo "Streaming logs from ${ECHO_POD}..."
 
-# We use timeout so this doesn't hang forever if it fails
 timeout 180 awk '
   /--- ALERT PAYLOAD RECEIVED ---/ { flag=1; next }
   /------------------------------/ { flag=0; exit }
@@ -22,7 +20,6 @@ if [ -s "tests/fixtures/alerts/KubeDeploymentReplicasMismatch.json" ]; then
   echo "✅ Alert successfully captured!"
 else
   echo "❌ Failed to capture alert payload."
-  # Restore immediately on failure
   kubectl rollout undo deploy/frontend-proxy -n victim
   exit 1
 fi
