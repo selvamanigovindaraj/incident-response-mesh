@@ -68,3 +68,28 @@ monitoring-down: check-prereqs
 .PHONY: generate-fixtures
 generate-fixtures: check-prereqs
 	./scripts/generate-alert-fixtures.sh
+
+.PHONY: chaos-up
+chaos-up: check-prereqs
+	helm repo add chaos-mesh https://charts.chaos-mesh.org
+	helm repo update chaos-mesh
+	helm upgrade --install chaos-mesh chaos-mesh/chaos-mesh --version 2.7.0 \
+		--namespace chaos --create-namespace \
+		-f infra/chaos/values-local.yaml
+	@echo "Waiting for Chaos Mesh to be Ready..."
+	kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=chaos-mesh -n chaos --timeout=5m
+
+.PHONY: chaos-down
+chaos-down: check-prereqs
+	helm uninstall chaos-mesh -n chaos || true
+	kubectl delete namespace chaos --ignore-not-found
+
+.PHONY: chaos-dashboard
+chaos-dashboard: check-prereqs
+	@echo "Access the dashboard at http://localhost:2333"
+	kubectl port-forward -n chaos svc/chaos-dashboard 2333:2333
+
+.PHONY: chaos
+chaos: check-prereqs
+	@if [ -z "$(RUN)" ]; then echo "Error: Must specify experiment (e.g., make chaos RUN=pod-kill)"; exit 1; fi
+	./scripts/run-chaos.sh $(RUN)
