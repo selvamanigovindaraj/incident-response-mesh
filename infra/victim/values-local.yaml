@@ -1,34 +1,214 @@
-default:
-  resources:
-    limits:
-      memory: 250Mi
-      cpu: 200m
-    requests:
-      memory: 50Mi
-      cpu: 50m
-
 components:
-  prometheus:
-    enabled: false
-  grafana:
-    enabled: false
-  frontendProxy:
+  accounting:
+    resources:
+      limits:
+        cpu: 200m
+        memory: 250Mi
+      requests:
+        cpu: 50m
+        memory: 50Mi
+  ad:
+    resources:
+      limits:
+        cpu: 200m
+        memory: 250Mi
+      requests:
+        cpu: 50m
+        memory: 50Mi
+  agent:
+    resources:
+      limits:
+        cpu: 200m
+        memory: 250Mi
+      requests:
+        cpu: 50m
+        memory: 50Mi
+  astronomy-db:
+    resources:
+      limits:
+        cpu: 200m
+        memory: 250Mi
+      requests:
+        cpu: 50m
+        memory: 50Mi
+  cart:
+    resources:
+      limits:
+        cpu: 200m
+        memory: 250Mi
+      requests:
+        cpu: 50m
+        memory: 50Mi
+  chatbot:
+    resources:
+      limits:
+        cpu: 200m
+        memory: 250Mi
+      requests:
+        cpu: 50m
+        memory: 50Mi
+  checkout:
+    resources:
+      limits:
+        cpu: 200m
+        memory: 250Mi
+      requests:
+        cpu: 50m
+        memory: 50Mi
+  currency:
+    resources:
+      limits:
+        cpu: 200m
+        memory: 250Mi
+      requests:
+        cpu: 50m
+        memory: 50Mi
+  email:
+    resources:
+      limits:
+        cpu: 200m
+        memory: 250Mi
+      requests:
+        cpu: 50m
+        memory: 50Mi
+  flagd:
+    resources:
+      limits:
+        cpu: 200m
+        memory: 250Mi
+      requests:
+        cpu: 50m
+        memory: 50Mi
+  fraud-detection:
+    resources:
+      limits:
+        cpu: 200m
+        memory: 250Mi
+      requests:
+        cpu: 50m
+        memory: 50Mi
+  frontend:
+    resources:
+      limits:
+        cpu: 200m
+        memory: 250Mi
+      requests:
+        cpu: 50m
+        memory: 50Mi
+  frontend-proxy:
     ingress:
       enabled: true
-      ingressClassName: traefik
       hosts:
-        - host: localhost
-          paths:
-            - path: /
-              pathType: Prefix
-              port: 8080
-  featureflagservice:
-    ingress:
-      enabled: true
+      - host: localhost
+        paths:
+        - path: /
+          pathType: Prefix
+          port: 8080
       ingressClassName: traefik
-      hosts:
-        - host: localhost
-          paths:
-            - path: /feature
-              pathType: Prefix
-              port: 8081
+    resources:
+      limits:
+        cpu: 200m
+        memory: 250Mi
+      requests:
+        cpu: 50m
+        memory: 50Mi
+  image-provider:
+    resources:
+      limits:
+        cpu: 200m
+        memory: 250Mi
+      requests:
+        cpu: 50m
+        memory: 50Mi
+  kafka:
+    resources:
+      limits:
+        cpu: 200m
+        memory: 250Mi
+      requests:
+        cpu: 50m
+        memory: 50Mi
+  load-generator:
+    resources:
+      limits:
+        cpu: 200m
+        memory: 250Mi
+      requests:
+        cpu: 50m
+        memory: 50Mi
+  mcp:
+    resources:
+      limits:
+        cpu: 200m
+        memory: 250Mi
+      requests:
+        cpu: 50m
+        memory: 50Mi
+  opamp-server:
+    resources:
+      limits:
+        cpu: 200m
+        memory: 250Mi
+      requests:
+        cpu: 50m
+        memory: 50Mi
+  payment:
+    resources:
+      limits:
+        cpu: 200m
+        memory: 250Mi
+      requests:
+        cpu: 50m
+        memory: 50Mi
+  product-catalog:
+    resources:
+      limits:
+        cpu: 200m
+        memory: 250Mi
+      requests:
+        cpu: 50m
+        memory: 50Mi
+  quote:
+    resources:
+      limits:
+        cpu: 200m
+        memory: 250Mi
+      requests:
+        cpu: 50m
+        memory: 50Mi
+  recommendation:
+    resources:
+      limits:
+        cpu: 200m
+        memory: 250Mi
+      requests:
+        cpu: 50m
+        memory: 50Mi
+  shipping:
+    resources:
+      limits:
+        cpu: 200m
+        memory: 250Mi
+      requests:
+        cpu: 50m
+        memory: 50Mi
+  telemetry-docs:
+    resources:
+      limits:
+        cpu: 200m
+        memory: 250Mi
+      requests:
+        cpu: 50m
+        memory: 50Mi
+  valkey-cart:
+    resources:
+      limits:
+        cpu: 200m
+        memory: 250Mi
+      requests:
+        cpu: 50m
+        memory: 50Mi
+grafana:
+  enabled: false
+prometheus:
+  enabled: false
