@@ -45,3 +45,55 @@ alertmanager:
       - localhost
     paths:
       - /
+
+additionalPrometheusRulesMap:
+  rule-name:
+    groups:
+      - name: custom-victim-alerts
+        rules:
+          - alert: KubePodCrashLooping
+            expr: rate(kube_pod_container_status_restarts_total{namespace="victim"}[5m]) * 60 * 5 > 0
+            for: 30s # Production: 5m
+            labels:
+              severity: critical
+            annotations:
+              summary: "Pod is crash looping."
+              description: "Pod {{ $labels.namespace }}/{{ $labels.pod }} ({{ $labels.container }}) is restarting repeatedly."
+
+          - alert: TargetDown
+            expr: up{namespace="victim"} == 0
+            for: 30s # Production: 5m
+            labels:
+              severity: critical
+            annotations:
+              summary: "Target down"
+              description: "{{ $labels.instance }} has been down for more than 30s."
+
+          - alert: HighErrorRate
+            # Assuming typical istio/envoy or standard 5xx metric (mocked for demo if needed, but matching common forms)
+            expr: sum(rate(http_requests_total{status=~"5..", namespace="victim"}[2m])) / sum(rate(http_requests_total{namespace="victim"}[2m])) > 0.05
+            for: 30s # Production: 5m
+            labels:
+              severity: critical
+            annotations:
+              summary: "High HTTP 5xx error rate"
+              description: "More than 5% of requests are failing in {{ $labels.namespace }}."
+
+          - alert: MemorySaturation
+            expr: container_memory_working_set_bytes{namespace="victim"} / container_spec_memory_limit_bytes{namespace="victim"} > 0.85
+            for: 1m # Production: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: "Memory saturation approaching limit"
+              description: "Pod {{ $labels.pod }} is using over 85% of its memory limit."
+              
+          - alert: KubeDeploymentReplicasMismatch
+            expr: kube_deployment_spec_replicas{namespace="victim"} != kube_deployment_status_replicas_available{namespace="victim"}
+            for: 30s # Production: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: "Deployment Replicas Mismatch"
+              description: "Deployment {{ $labels.deployment }} has missing replicas."
+
