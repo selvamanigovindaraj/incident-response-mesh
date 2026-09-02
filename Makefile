@@ -93,3 +93,9 @@ chaos-dashboard: check-prereqs
 chaos: check-prereqs
 	@if [ -z "$(RUN)" ]; then echo "Error: Must specify experiment (e.g., make chaos RUN=pod-kill)"; exit 1; fi
 	./scripts/run-chaos.sh $(RUN)
+
+.PHONY: scenario
+scenario:
+	@if [ -z "$(RUN)" ]; then echo "Usage: make scenario RUN=<id>"; exit 1; fi
+	pip install pydantic pyyaml requests > /dev/null 2>&1 || true
+	python3 scripts/run-scenario.py $(RUN)
