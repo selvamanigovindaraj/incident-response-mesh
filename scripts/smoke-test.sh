@@ -19,7 +19,7 @@ done
 
 echo "2. Checking Telemetry Flow in Jaeger..."
 # Port-forward Jaeger query service in the background
-kubectl port-forward svc/opentelemetry-demo-jaeger-query 16686:16686 -n victim > /dev/null 2>&1 &
+kubectl port-forward svc/jaeger 16686:16686 -n victim > /dev/null 2>&1 &
 PF_PID=$!
 
 # Ensure we kill the port-forward on script exit
