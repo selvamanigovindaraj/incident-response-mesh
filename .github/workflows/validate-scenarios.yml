@@ -1,0 +1,16 @@
+name: Validate Scenario Labels
+on: [push, pull_request]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Install dependencies
+        run: pip install pydantic pyyaml
+      - name: Validate Schema
+        run: python scenarios/validate.py
