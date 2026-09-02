@@ -48,6 +48,8 @@ jobs:
           fetch-depth: 0
       - name: Gitleaks Scan
         uses: zricethezav/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install uv
         if: needs.detect-changes.outputs.security == 'true'
