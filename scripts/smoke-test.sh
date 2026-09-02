@@ -40,7 +40,7 @@ else
 fi
 
 echo "3. Checking Failure State..."
-kubectl scale deploy/opentelemetry-demo-frontend --replicas=0 -n victim
+kubectl scale deploy/frontend-proxy --replicas=0 -n victim
 echo "Waiting for frontend to scale down..."
 sleep 10
 
@@ -52,7 +52,7 @@ else
 fi
 
 echo "Restoring frontend..."
-kubectl scale deploy/opentelemetry-demo-frontend --replicas=1 -n victim
+kubectl scale deploy/frontend-proxy --replicas=1 -n victim
 kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=frontend -n victim --timeout=2m
 
 echo "==> Smoke Test Passed! <=="
