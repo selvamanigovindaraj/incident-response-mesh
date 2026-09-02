@@ -64,3 +64,7 @@ monitoring-up: check-prereqs
 monitoring-down: check-prereqs
 	helm uninstall prometheus -n monitoring || true
 	kubectl delete namespace monitoring --ignore-not-found
+
+.PHONY: generate-fixtures
+generate-fixtures: check-prereqs
+	./scripts/generate-alert-fixtures.sh
