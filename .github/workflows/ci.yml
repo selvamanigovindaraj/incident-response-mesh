@@ -6,6 +6,14 @@ on:
   pull_request:
 
 jobs:
+  security-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: zricethezav/gitleaks-action@master
+
   detect-changes:
     runs-on: ubuntu-latest
     outputs:
