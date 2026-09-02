@@ -1,0 +1,34 @@
+default:
+  resources:
+    limits:
+      memory: 250Mi
+      cpu: 200m
+    requests:
+      memory: 50Mi
+      cpu: 50m
+
+components:
+  prometheus:
+    enabled: false
+  grafana:
+    enabled: false
+  frontendProxy:
+    ingress:
+      enabled: true
+      ingressClassName: traefik
+      hosts:
+        - host: localhost
+          paths:
+            - path: /
+              pathType: Prefix
+              port: 8080
+  featureflagservice:
+    ingress:
+      enabled: true
+      ingressClassName: traefik
+      hosts:
+        - host: localhost
+          paths:
+            - path: /feature
+              pathType: Prefix
+              port: 8081
