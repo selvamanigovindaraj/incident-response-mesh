@@ -1,0 +1,16 @@
+scenario_id: compound-node-cache
+category: compound
+manifests:
+  - scenarios/manifests/infra-node-cpu.yaml
+root_cause:
+  component: node-and-flag
+  failure_mode: cpu_starvation_and_cache_miss
+expected_severity: warning
+expected_alerts:
+  - NodeHighCpuLoad
+red_herring_signals:
+  - FrontendHigh5xxRates
+valid_remediations:
+  - "1. Enable fallback cache flag"
+  - "2. Provision new node or kill stressor"
+duration_seconds: 60

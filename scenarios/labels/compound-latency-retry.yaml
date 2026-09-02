@@ -1,0 +1,16 @@
+scenario_id: compound-latency-retry
+category: compound
+manifests:
+  - scenarios/manifests/network-api-latency.yaml
+root_cause:
+  component: network-and-flag
+  failure_mode: latency_with_retry_storm
+expected_severity: critical
+expected_alerts:
+  - CheckoutHighLatency
+red_herring_signals:
+  - ApiGatewayTimeout
+valid_remediations:
+  - "1. Disable retry feature flag"
+  - "2. Remove network latency injection"
+duration_seconds: 60

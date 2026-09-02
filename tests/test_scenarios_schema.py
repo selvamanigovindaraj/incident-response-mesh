@@ -253,4 +253,26 @@ def test_app_scenarios_exist_and_valid():
             assert os.path.exists(manifest_path), f"Manifest {manifest} does not exist"
 
 
+def test_compound_scenarios_exist_and_valid():
+    compound_scenarios = [
+        "compound-latency-retry",
+        "compound-node-cache",
+    ]
+    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    labels_dir = os.path.join(repo_root, "scenarios", "labels")
+
+    for sc_id in compound_scenarios:
+        label_file = os.path.join(labels_dir, f"{sc_id}.yaml")
+        assert os.path.exists(label_file), f"Missing label file for {sc_id}"
+        with open(label_file, "r") as f:
+            data = yaml.safe_load(f)
+        label = ScenarioLabel(**data)
+        assert label.scenario_id == sc_id
+        assert label.category == "compound"
+        for manifest in label.manifests:
+            manifest_path = os.path.join(repo_root, manifest)
+            assert os.path.exists(manifest_path), f"Manifest {manifest} does not exist"
+
+
+
 
