@@ -21,8 +21,11 @@ except ImportError:
 
 
 def run_cmd(cmd):
-    print(f"Running: {cmd}")
-    result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+    if isinstance(cmd, list):
+        print(f"Running: {' '.join(cmd)}")
+    else:
+        print(f"Running: {cmd}")
+    result = subprocess.run(cmd, shell=False, capture_output=True, text=True)
     if result.returncode != 0:
         print(f"Error: {result.stderr}")
     return result.returncode == 0
@@ -93,10 +96,14 @@ def main():
     print(f"=== Starting Scenario {scenario_id} ===")
 
     # Apply
+    applied_manifests = []
     for m in manifests:
-        if not run_cmd(f"kubectl apply -f {m}"):
+        if not run_cmd(["kubectl", "apply", "-f", m]):
             print("Failed to apply manifest. Aborting.")
+            for applied in applied_manifests:
+                run_cmd(["kubectl", "delete", "-f", applied, "--ignore-not-found"])
             sys.exit(1)
+        applied_manifests.append(m)
 
     print(f"Waiting {duration} seconds for alerts to fire...")
     time.sleep(duration)
@@ -107,7 +114,7 @@ def main():
     # Cleanup
     print("=== Cleaning up ===")
     for m in manifests:
-        run_cmd(f"kubectl delete -f {m} --ignore-not-found")
+        run_cmd(["kubectl", "delete", "-f", m, "--ignore-not-found"])
 
     if success:
         print("✅ Scenario executed and validated successfully.")

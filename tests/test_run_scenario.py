@@ -26,11 +26,11 @@ def run_scenario():
 
 
 def test_run_cmd_success(run_scenario):
-    assert run_scenario.run_cmd("echo 'test success'") is True
+    assert run_scenario.run_cmd(["echo", "test success"]) is True
 
 
 def test_run_cmd_failure(run_scenario):
-    assert run_scenario.run_cmd("false") is False
+    assert run_scenario.run_cmd(["false"]) is False
 
 
 def test_check_alerts_success_dict_format(run_scenario):
@@ -196,8 +196,8 @@ def test_main_full_workflow_success(run_scenario, monkeypatch, tmp_path):
         run_scenario.main()
     assert exc_info.value.code == 0
 
-    assert "kubectl apply -f scenarios/manifests/test-manifest.yaml" in commands_run
-    assert "kubectl delete -f scenarios/manifests/test-manifest.yaml --ignore-not-found" in commands_run
+    assert ["kubectl", "apply", "-f", "scenarios/manifests/test-manifest.yaml"] in commands_run
+    assert ["kubectl", "delete", "-f", "scenarios/manifests/test-manifest.yaml", "--ignore-not-found"] in commands_run
 
 
 def test_main_manifest_apply_failure(run_scenario, monkeypatch, tmp_path):
@@ -208,7 +208,10 @@ def test_main_manifest_apply_failure(run_scenario, monkeypatch, tmp_path):
     scenario_data = {
         "scenario_id": "test-scenario",
         "category": "infra",
-        "manifests": ["scenarios/manifests/test-manifest.yaml"],
+        "manifests": [
+            "scenarios/manifests/test-manifest-1.yaml",
+            "scenarios/manifests/test-manifest-2.yaml",
+        ],
         "root_cause": {
             "component": "test",
             "failure_mode": "crash",
@@ -226,6 +229,9 @@ def test_main_manifest_apply_failure(run_scenario, monkeypatch, tmp_path):
 
     def mock_run_cmd(cmd):
         commands_run.append(cmd)
+        # First manifest apply succeeds, second manifest apply fails
+        if cmd == ["kubectl", "apply", "-f", "scenarios/manifests/test-manifest-1.yaml"]:
+            return True
         return False
 
     monkeypatch.setattr(run_scenario, "run_cmd", mock_run_cmd)
@@ -235,9 +241,12 @@ def test_main_manifest_apply_failure(run_scenario, monkeypatch, tmp_path):
         run_scenario.main()
     assert exc_info.value.code == 1
 
-    assert "kubectl apply -f scenarios/manifests/test-manifest.yaml" in commands_run
-    # Should not clean up if apply aborted
-    assert not any("kubectl delete" in c for c in commands_run)
+    assert ["kubectl", "apply", "-f", "scenarios/manifests/test-manifest-1.yaml"] in commands_run
+    assert ["kubectl", "apply", "-f", "scenarios/manifests/test-manifest-2.yaml"] in commands_run
+    # Should clean up the already applied manifest (manifest-1)
+    assert ["kubectl", "delete", "-f", "scenarios/manifests/test-manifest-1.yaml", "--ignore-not-found"] in commands_run
+    # Should NOT attempt to delete the manifest that failed to apply (manifest-2)
+    assert ["kubectl", "delete", "-f", "scenarios/manifests/test-manifest-2.yaml", "--ignore-not-found"] not in commands_run
 
 
 def test_main_validation_failure_cleans_up(run_scenario, monkeypatch, tmp_path):
@@ -277,5 +286,5 @@ def test_main_validation_failure_cleans_up(run_scenario, monkeypatch, tmp_path):
         run_scenario.main()
     assert exc_info.value.code == 1
 
-    assert "kubectl apply -f scenarios/manifests/test-manifest.yaml" in commands_run
-    assert "kubectl delete -f scenarios/manifests/test-manifest.yaml --ignore-not-found" in commands_run
+    assert ["kubectl", "apply", "-f", "scenarios/manifests/test-manifest.yaml"] in commands_run
+    assert ["kubectl", "delete", "-f", "scenarios/manifests/test-manifest.yaml", "--ignore-not-found"] in commands_run

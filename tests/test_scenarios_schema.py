@@ -272,7 +272,3 @@ def test_compound_scenarios_exist_and_valid():
         for manifest in label.manifests:
             manifest_path = os.path.join(repo_root, manifest)
             assert os.path.exists(manifest_path), f"Manifest {manifest} does not exist"
-
-
-
-
