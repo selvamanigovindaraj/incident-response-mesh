@@ -1,0 +1,27 @@
+apiVersion: k3d.io/v1alpha5
+kind: Simple
+metadata:
+  name: irm-cluster
+servers: 1
+agents: 2
+ports:
+  - port: 8080:80
+    nodeFilters:
+      - loadbalancer
+  - port: 8443:443
+    nodeFilters:
+      - loadbalancer
+  - port: 3000:3000
+    nodeFilters:
+      - loadbalancer
+  - port: 9090:9090
+    nodeFilters:
+      - loadbalancer
+  - port: 9093:9093
+    nodeFilters:
+      - loadbalancer
+registries:
+  create:
+    name: irm-registry
+    host: "0.0.0.0"
+    hostPort: "5001"
