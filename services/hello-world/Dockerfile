@@ -1,8 +1,10 @@
 FROM python:3.12-slim
 WORKDIR /app
-COPY pyproject.toml .
+COPY pyproject.toml uv.lock ./
+COPY libs ./libs
+COPY services/hello-world ./services/hello-world
 # Install uv
 RUN pip install uv
-COPY hello_world /app/hello_world
 RUN uv sync --no-dev
+WORKDIR /app/services/hello-world
 CMD ["uv", "run", "python", "-m", "hello_world.main"]

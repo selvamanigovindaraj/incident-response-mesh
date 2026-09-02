@@ -4,5 +4,5 @@
     "features": {
         "ghcr.io/devcontainers/features/docker-in-docker:2": {}
     },
-    "postCreateCommand": "curl -LsSf https://astral.sh/uv/install.sh | sh && uv sync"
+    "postCreateCommand": "curl -LsSf https://astral.sh/uv/install.sh | sh && $HOME/.local/bin/uv sync"
 }

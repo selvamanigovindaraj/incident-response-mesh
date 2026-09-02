@@ -16,9 +16,18 @@ jobs:
         id: filter
         with:
           filters: |
-            libs_core: 'libs/core/**'
-            services_hello_world: 'services/hello-world/**'
-            services_scenario_runner: 'services/scenario-runner/**'
+            libs_core:
+              - 'libs/core/**'
+              - 'pyproject.toml'
+              - 'uv.lock'
+            services_hello_world:
+              - 'services/hello-world/**'
+              - 'pyproject.toml'
+              - 'uv.lock'
+            services_scenario_runner:
+              - 'services/scenario-runner/**'
+              - 'pyproject.toml'
+              - 'uv.lock'
 
   test:
     needs: detect-changes
@@ -36,10 +45,12 @@ jobs:
       - name: Setup Python
         run: uv python install 3.12
       
-      # Convert underscore back to slash for directory path
+      # Convert underscore back to slash and hyphen for directory path
       - name: Set Package Path
         run: |
-          PKG_PATH=$(echo "${{ matrix.package }}" | sed -e 's/_/\//' -e 's/_/-/g')
+          PKG_PATH="${{ matrix.package }}"
+          PKG_PATH="${PKG_PATH/_//}"
+          PKG_PATH="${PKG_PATH//_/-}"
           echo "PKG_PATH=$PKG_PATH" >> $GITHUB_ENV
       
       - name: Sync dependencies
@@ -67,5 +78,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build
-        working-directory: services/hello-world
-        run: docker build -t hello-world:test .
+        run: docker build -t hello-world:test -f services/hello-world/Dockerfile .
