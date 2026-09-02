@@ -1,0 +1,47 @@
+grafana:
+  enabled: true
+  ingress:
+    enabled: true
+    ingressClassName: traefik
+    hosts:
+      - localhost
+    path: /
+  # Set default password for local development
+  adminPassword: "prom-operator"
+
+prometheus:
+  prometheusSpec:
+    # Scrape configuration for the victim namespace
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    ruleSelectorNilUsesHelmValues: false
+  ingress:
+    enabled: true
+    ingressClassName: traefik
+    hosts:
+      - localhost
+    paths:
+      - /
+
+alertmanager:
+  config:
+    global:
+      resolve_timeout: 1m
+    route:
+      group_by: ['namespace']
+      group_wait: 10s
+      group_interval: 10s
+      repeat_interval: 1h
+      receiver: 'echo-webhook'
+    receivers:
+    - name: 'null'
+    - name: 'echo-webhook'
+      webhook_configs:
+      - url: 'http://alert-echo.monitoring.svc.cluster.local:8080/'
+  ingress:
+    enabled: true
+    ingressClassName: traefik
+    hosts:
+      - localhost
+    paths:
+      - /
