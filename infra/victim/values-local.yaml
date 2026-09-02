@@ -224,10 +224,10 @@ opensearch:
   resources:
     limits:
       cpu: 500m
-      requests:
-        cpu: 200m
-        memory: 512Mi
       memory: 700Mi
+    requests:
+      cpu: 200m
+      memory: 512Mi
 opentelemetry-collector:
   mode: deployment
   presets:
