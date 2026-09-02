@@ -19,7 +19,7 @@ spec:
       - name: python-echo
         image: python:3.11-alpine
         # A tiny python server that prints the POST body to stdout
-        command: ["python3", "-c"]
+        command: ["python3", "-u", "-c"]
         args:
         - |
           import http.server
