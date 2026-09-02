@@ -27,6 +27,7 @@ fi
 
 echo "==> 3. Deleting Key Pair from AWS (Local file kept at ~/.ssh/)..."
 aws ec2 delete-key-pair --key-name "$KEY_NAME"
+    rm -f "~/.ssh/$KEY_NAME.pem" 2>/dev/null || true
 echo "Deleted Key Pair: $KEY_NAME"
 
 echo "✅ Teardown complete!"
