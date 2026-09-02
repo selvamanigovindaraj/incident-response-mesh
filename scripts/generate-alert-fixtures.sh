@@ -2,6 +2,7 @@
 set -eo pipefail
 
 mkdir -p tests/fixtures/alerts
+rm -f tests/fixtures/alerts/KubeDeploymentReplicasMismatch.json
 
 echo "==> Triggering Failure to Generate Alerts <=="
 kubectl set image deploy/frontend-proxy frontend-proxy="nginx:invalid-tag-123" -n victim
@@ -10,11 +11,11 @@ echo "Waiting for Alertmanager to fire (this may take up to 3 minutes)..."
 ECHO_POD=$(kubectl get pod -l app=alert-echo -n monitoring | grep Running | awk '{print $1}' | head -n 1)
 echo "Streaming logs from ${ECHO_POD}..."
 
-timeout 180 awk '
+timeout 180 bash -c "kubectl logs -f ${ECHO_POD} -n monitoring | awk '
   /--- ALERT PAYLOAD RECEIVED ---/ { flag=1; next }
   /------------------------------/ { flag=0; exit }
-  flag { print > "tests/fixtures/alerts/KubeDeploymentReplicasMismatch.json" }
-' <(kubectl logs -f $ECHO_POD -n monitoring) || true
+  flag { print > \"tests/fixtures/alerts/KubeDeploymentReplicasMismatch.json\" }
+'" || true
 
 if [ -s "tests/fixtures/alerts/KubeDeploymentReplicasMismatch.json" ]; then
   echo "✅ Alert successfully captured!"
