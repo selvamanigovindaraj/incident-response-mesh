@@ -129,11 +129,11 @@ components:
   kafka:
     envOverrides:
     - name: KAFKA_HEAP_OPTS
-      value: -Xmx250m -Xms250m
+      value: -Xmx500m -Xms500m
     resources:
       limits:
         cpu: 300m
-        memory: 400Mi
+        memory: 700Mi
       requests:
         cpu: 50m
         memory: 100Mi
