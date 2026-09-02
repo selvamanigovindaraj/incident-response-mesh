@@ -5,6 +5,12 @@ description = "Incident Response Mesh Monorepo"
 requires-python = ">=3.12"
 dependencies = []
 
+[dependency-groups]
+dev = [
+    "pip-audit>=2.7.0",
+    "pyyaml>=6.0",
+]
+
 [tool.uv.workspace]
 members = [
     "libs/*",
