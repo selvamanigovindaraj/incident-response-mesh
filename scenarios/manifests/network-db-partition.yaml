@@ -1,0 +1,13 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: valkey-partition
+  namespace: victim
+spec:
+  action: partition
+  mode: all
+  selector:
+    labelSelectors:
+      app.kubernetes.io/name: valkey-cart
+  direction: both
+  duration: '90s'

@@ -1,0 +1,14 @@
+scenario_id: network-db-partition
+category: network
+manifests:
+  - scenarios/manifests/network-db-partition.yaml
+root_cause:
+  component: valkey-cart
+  failure_mode: network_partition
+expected_severity: critical
+expected_alerts:
+  - CartServiceHighErrorRate
+red_herring_signals: []
+valid_remediations:
+  - Restore network connectivity between cart and valkey
+duration_seconds: 60

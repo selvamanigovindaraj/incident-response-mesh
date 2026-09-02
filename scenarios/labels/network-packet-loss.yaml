@@ -1,0 +1,14 @@
+scenario_id: network-packet-loss
+category: network
+manifests:
+  - scenarios/manifests/network-packet-loss.yaml
+root_cause:
+  component: payment
+  failure_mode: packet_loss
+expected_severity: warning
+expected_alerts:
+  - PaymentServiceHighErrorRate
+red_herring_signals: []
+valid_remediations:
+  - Investigate network interface on payment node
+duration_seconds: 60

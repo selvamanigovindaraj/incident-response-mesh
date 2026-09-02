@@ -1,0 +1,14 @@
+scenario_id: network-api-latency
+category: network
+manifests:
+  - scenarios/manifests/network-api-latency.yaml
+root_cause:
+  component: checkout
+  failure_mode: high_latency
+expected_severity: warning
+expected_alerts:
+  - CheckoutServiceHighLatency
+red_herring_signals: []
+valid_remediations:
+  - Investigate checkout service performance
+duration_seconds: 60

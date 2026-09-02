@@ -1,0 +1,14 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: payment-loss
+  namespace: victim
+spec:
+  action: loss
+  mode: all
+  selector:
+    labelSelectors:
+      app.kubernetes.io/name: payment
+  loss:
+    loss: '20'
+  duration: '90s'

@@ -1,0 +1,14 @@
+scenario_id: network-dns-failure
+category: network
+manifests:
+  - scenarios/manifests/network-dns-failure.yaml
+root_cause:
+  component: coredns
+  failure_mode: dns_resolution_failure
+expected_severity: critical
+expected_alerts:
+  - DNSResolutionFailing
+red_herring_signals: []
+valid_remediations:
+  - Restart coredns pods
+duration_seconds: 60

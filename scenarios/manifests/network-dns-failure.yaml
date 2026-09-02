@@ -1,0 +1,14 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: DNSChaos
+metadata:
+  name: dns-fail
+  namespace: victim
+spec:
+  action: error
+  mode: all
+  selector:
+    labelSelectors:
+      app.kubernetes.io/name: frontend
+  patterns:
+    - '*'
+  duration: '90s'
