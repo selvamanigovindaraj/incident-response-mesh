@@ -48,3 +48,19 @@ victim-down: check-prereqs
 victim-smoke: check-prereqs
 	./scripts/smoke-test.sh
 
+.PHONY: monitoring-up
+monitoring-up: check-prereqs
+	helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+	helm repo update prometheus-community
+	helm upgrade --install prometheus prometheus-community/kube-prometheus-stack --version 62.3.1 \
+		--namespace monitoring --create-namespace \
+		-f infra/monitoring/values-local.yaml
+	kubectl apply -f infra/monitoring/alert-echo.yaml
+	@echo "Waiting for monitoring pods to be Ready..."
+	kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=prometheus -n monitoring --timeout=5m
+	kubectl wait --for=condition=ready pod -l app=alert-echo -n monitoring --timeout=2m
+
+.PHONY: monitoring-down
+monitoring-down: check-prereqs
+	helm uninstall prometheus -n monitoring || true
+	kubectl delete namespace monitoring --ignore-not-found
