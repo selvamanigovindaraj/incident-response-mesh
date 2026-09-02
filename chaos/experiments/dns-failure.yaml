@@ -1,0 +1,16 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: DNSChaos
+metadata:
+  name: payment-dns-error
+  namespace: victim
+spec:
+  action: error
+  mode: all
+  selector:
+    namespaces:
+      - victim
+    labelSelectors:
+      app.kubernetes.io/name: payment
+  patterns:
+    - "*"
+  duration: "60s"

@@ -1,0 +1,17 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: StressChaos
+metadata:
+  name: load-generator-cpu-stress
+  namespace: victim
+spec:
+  mode: all
+  selector:
+    namespaces:
+      - victim
+    labelSelectors:
+      app.kubernetes.io/name: load-generator
+  stressors:
+    cpu:
+      workers: 1
+      load: 100
+  duration: "60s"
