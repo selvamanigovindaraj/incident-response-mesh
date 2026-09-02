@@ -137,6 +137,17 @@ suppressions:
         with pytest.raises(ValueError, match="missing required 'expires_on'"):
             load_suppressions(file, current_date=date(2026, 9, 2))
 
+    def test_load_repo_baseline_suppressions(self) -> None:
+        file = REPO_ROOT / "security-suppressions.yaml"
+        active, expired = load_suppressions(file, current_date=date(2026, 9, 2))
+        assert len(active) == 13
+        assert expired == []
+        for s in active:
+            assert s.id.startswith("CVE-")
+            assert s.expires_on == date(2026, 10, 2)
+            assert len(s.reason) > 0
+            assert s.suppressed_by == "secops"
+
 
 class TestParsePipAuditJson:
     """Test parsing pip-audit output JSON."""
