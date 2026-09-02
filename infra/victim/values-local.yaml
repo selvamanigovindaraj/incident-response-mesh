@@ -133,7 +133,7 @@ components:
     resources:
       limits:
         cpu: 300m
-        memory: 700Mi
+        memory: 1Gi
       requests:
         cpu: 50m
         memory: 100Mi
@@ -224,7 +224,7 @@ opensearch:
   resources:
     limits:
       cpu: 500m
-      memory: 700Mi
+      memory: 1Gi
     requests:
       cpu: 200m
       memory: 512Mi
