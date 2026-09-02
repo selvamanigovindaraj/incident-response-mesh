@@ -1,0 +1,15 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: StressChaos
+metadata:
+  name: node-cpu
+  namespace: victim
+spec:
+  mode: all
+  selector:
+    labelSelectors:
+      app.kubernetes.io/name: frontend
+  stressors:
+    cpu:
+      workers: 4
+      load: 100
+  duration: '90s'

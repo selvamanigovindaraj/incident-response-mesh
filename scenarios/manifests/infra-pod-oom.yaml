@@ -1,0 +1,15 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: StressChaos
+metadata:
+  name: kafka-oom
+  namespace: victim
+spec:
+  mode: one
+  selector:
+    labelSelectors:
+      app.kubernetes.io/name: kafka
+  stressors:
+    memory:
+      workers: 4
+      size: '1GB'
+  duration: '90s'

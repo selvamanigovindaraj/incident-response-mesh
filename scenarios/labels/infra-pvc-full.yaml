@@ -1,0 +1,13 @@
+scenario_id: infra-pvc-full
+category: infra
+manifests: []
+root_cause:
+  component: opensearch
+  failure_mode: disk_full
+expected_severity: critical
+expected_alerts:
+  - KubePersistentVolumeFillingUp
+red_herring_signals: []
+valid_remediations:
+  - Expand PVC storage size
+duration_seconds: 60

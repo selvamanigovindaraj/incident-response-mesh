@@ -181,3 +181,27 @@ def test_validate_script_missing_dir(monkeypatch, tmp_path):
     with pytest.raises(SystemExit) as exc_info:
         validate_main()
     assert exc_info.value.code == 1
+
+
+def test_infra_scenarios_exist_and_valid():
+    infra_scenarios = [
+        "infra-pod-oom",
+        "infra-node-cpu",
+        "infra-pvc-full",
+        "infra-pod-eviction",
+    ]
+    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    labels_dir = os.path.join(repo_root, "scenarios", "labels")
+
+    for sc_id in infra_scenarios:
+        label_file = os.path.join(labels_dir, f"{sc_id}.yaml")
+        assert os.path.exists(label_file), f"Missing label file for {sc_id}"
+        with open(label_file, "r") as f:
+            data = yaml.safe_load(f)
+        label = ScenarioLabel(**data)
+        assert label.scenario_id == sc_id
+        assert label.category == "infra"
+        for manifest in label.manifests:
+            manifest_path = os.path.join(repo_root, manifest)
+            assert os.path.exists(manifest_path), f"Manifest {manifest} does not exist"
+

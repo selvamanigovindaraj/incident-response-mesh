@@ -1,0 +1,14 @@
+scenario_id: infra-pod-oom
+category: infra
+manifests:
+  - scenarios/manifests/infra-pod-oom.yaml
+root_cause:
+  component: kafka
+  failure_mode: oom_kill
+expected_severity: critical
+expected_alerts:
+  - KubePodCrashLooping
+red_herring_signals: []
+valid_remediations:
+  - Increase memory limit for kafka statefulset
+duration_seconds: 60

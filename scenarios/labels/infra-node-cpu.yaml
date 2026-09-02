@@ -1,0 +1,15 @@
+scenario_id: infra-node-cpu
+category: infra
+manifests:
+  - scenarios/manifests/infra-node-cpu.yaml
+root_cause:
+  component: agent-node
+  failure_mode: cpu_starvation
+expected_severity: warning
+expected_alerts:
+  - NodeHighCpuLoad
+red_herring_signals: []
+valid_remediations:
+  - Provision additional nodes
+  - Identify and kill rogue CPU processes
+duration_seconds: 60

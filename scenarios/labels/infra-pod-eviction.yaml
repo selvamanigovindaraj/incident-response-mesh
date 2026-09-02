@@ -1,0 +1,14 @@
+scenario_id: infra-pod-eviction
+category: infra
+manifests:
+  - scenarios/manifests/infra-pod-eviction.yaml
+root_cause:
+  component: checkout
+  failure_mode: eviction
+expected_severity: warning
+expected_alerts:
+  - KubePodNotReady
+red_herring_signals: []
+valid_remediations:
+  - Increase ephemeral storage limits
+duration_seconds: 60
