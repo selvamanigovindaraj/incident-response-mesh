@@ -36,6 +36,10 @@ USER_DATA=$(cat << 'UD'
 #!/bin/bash
 apt-get update
 apt-get install -y docker.io make jq
+
+# SAFETY DEAD-MAN SWITCH: Auto-shutdown and terminate instance after 3 hours (180 mins)
+shutdown -P +180
+
 systemctl start docker
 systemctl enable docker
 usermod -aG docker ubuntu
