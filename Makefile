@@ -18,3 +18,12 @@ cluster-down: check-prereqs
 cluster-status: check-prereqs
 	k3d cluster list
 	kubectl get nodes -o wide
+
+.PHONY: test-registry
+test-registry: check-prereqs
+	@echo "Testing registry push..."
+	docker pull alpine:latest
+	docker tag alpine:latest localhost:5001/test-image:latest
+	docker push localhost:5001/test-image:latest
+	@echo "Testing registry pull from within cluster..."
+	kubectl run registry-test --image=irm-registry:5000/test-image:latest --restart=Never --rm -i --tty -- sh -c "command -v sh"
