@@ -1,0 +1,14 @@
+[project]
+name = "incident-response-mesh"
+version = "0.1.0"
+description = "Incident Response Mesh Monorepo"
+requires-python = ">=3.12"
+dependencies = []
+
+[tool.uv.workspace]
+members = [
+    "libs/*",
+    "services/*",
+    "agents/*",
+    "mcp/*"
+]
