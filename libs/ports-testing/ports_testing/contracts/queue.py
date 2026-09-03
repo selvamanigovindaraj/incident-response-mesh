@@ -95,20 +95,20 @@ async def test_queue_nack_redelivery(
     group = "contract-nack-group"
     msg = Message(
         payload={"action": "transcode"},
-        idempotency_key="idemp-nack-001",
+        idempotency_key="idemp-nack-001",  # gitleaks:allow
     )
     await queue_adapter.publish(topic, msg)
 
     consumer = queue_adapter.consume(topic, group)
     try:
         first_delivery = await asyncio.wait_for(anext(consumer), timeout=2.0)
-        assert first_delivery.idempotency_key == "idemp-nack-001"
+        assert first_delivery.idempotency_key == "idemp-nack-001"  # gitleaks:allow
 
         # Reject with requeue
         await queue_adapter.nack(first_delivery, requeue=True)
 
         second_delivery = await asyncio.wait_for(anext(consumer), timeout=2.0)
-        assert second_delivery.idempotency_key == "idemp-nack-001"
+        assert second_delivery.idempotency_key == "idemp-nack-001"  # gitleaks:allow
         assert second_delivery.payload == {"action": "transcode"}
         await queue_adapter.ack(second_delivery)
     finally:

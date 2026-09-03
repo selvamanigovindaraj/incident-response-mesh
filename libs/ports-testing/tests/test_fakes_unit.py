@@ -443,7 +443,7 @@ async def test_blob_store_list_lexicographical() -> None:
 
 @pytest.mark.asyncio
 async def test_secret_store() -> None:
-    store = InMemorySecretStore({"API_KEY": "secret-val-123"})
+    store = InMemorySecretStore({"API_KEY": "secret-val-123"})  # gitleaks:allow
     assert await store.get("API_KEY") == "secret-val-123"
 
     with pytest.raises(SecretNotFoundError):
