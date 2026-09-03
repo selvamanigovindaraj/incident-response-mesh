@@ -256,19 +256,16 @@ async def test_sabotage_queue_no_dlq_fails_contract() -> None:
 async def test_sabotage_queue_no_visibility_redelivery_fails_contract() -> None:
     """
     Sabotage: BrokenQueueNoVisibility drops unacknowledged messages instead of redelivering.
-    Contract test_queue_visibility_timeout_redelivery must catch and fail (TimeoutError).
+    Contract test_queue_visibility_timeout_redelivery must catch the missing message and fail.
     """
     broken_queue = BrokenQueueNoVisibility(visibility_timeout=0.05)
-    queue_config = QueueConfig(visibility_timeout=0.05)
+    queue_config = QueueConfig(visibility_timeout=0.05, redelivery_timeout=0.15)
     try:
-        with pytest.raises((AssertionError, TimeoutError)):
-            # Wait with a short outer timeout so the test completes swiftly
-            await asyncio.wait_for(
-                contract_test_queue_visibility_timeout_redelivery(
-                    broken_queue, queue_config
-                ),
-                timeout=0.8,
+        with pytest.raises((AssertionError, pytest.fail.Exception)) as exc_info:
+            await contract_test_queue_visibility_timeout_redelivery(
+                broken_queue, queue_config
             )
+        assert "not redelivered" in str(exc_info.value).lower()
     finally:
         await broken_queue.close()
 
@@ -354,3 +351,22 @@ async def test_sabotage_secret_store_silent_miss_fails_contract() -> None:
         await contract_test_secret_store_get_nonexistent_raises(
             broken_secret, SecretStoreConfig()
         )
+
+
+class BareAuditSink:
+    """Implements only the minimal AuditSink protocol without inspection methods."""
+
+    async def append(self, event: dict[str, Any]) -> int:
+        return 1
+
+
+@pytest.mark.asyncio
+async def test_audit_sink_immutability_skips_without_event_inspection() -> None:
+    """
+    Verifies that test_audit_sink_payload_immutability_caller_mutation skips cleanly
+    when the sink adapter does not provide an event inspection / reader method.
+    """
+    bare_sink = BareAuditSink()
+    with pytest.raises(pytest.skip.Exception) as exc_info:
+        await contract_test_audit_sink_payload_immutability_caller_mutation(bare_sink)
+    assert "No event_reader or inspection method provided" in str(exc_info.value)

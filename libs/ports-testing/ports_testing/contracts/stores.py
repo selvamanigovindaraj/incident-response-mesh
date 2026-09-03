@@ -88,14 +88,15 @@ async def test_blob_store_put_and_get(blob_store: BlobStore) -> None:
     key = "contract-blobs/standard-artifact.bin"
     payload = b"\x00\x01\x02\xffbinary-data-content\xfe"
 
-    stored_key = await blob_store.put(key, payload)
-    assert stored_key == key, f"Expected put to return key '{key}', got '{stored_key}'"
+    try:
+        stored_key = await blob_store.put(key, payload)
+        assert stored_key == key, f"Expected put to return key '{key}', got '{stored_key}'"
 
-    retrieved = await blob_store.get(key)
-    assert retrieved == payload, "Retrieved blob bytes did not match original data"
-
-    # Clean up
-    await blob_store.delete(key)
+        retrieved = await blob_store.get(key)
+        assert retrieved == payload, "Retrieved blob bytes did not match original data"
+    finally:
+        # Clean up
+        await blob_store.delete(key)
 
 
 @pytest.mark.asyncio
@@ -124,14 +125,15 @@ async def test_blob_store_overwrite(blob_store: BlobStore) -> None:
     initial_data = b"initial-version-data"
     updated_data = b"updated-version-data-v2"
 
-    await blob_store.put(key, initial_data)
-    assert await blob_store.get(key) == initial_data
+    try:
+        await blob_store.put(key, initial_data)
+        assert await blob_store.get(key) == initial_data
 
-    await blob_store.put(key, updated_data)
-    assert await blob_store.get(key) == updated_data
-
-    # Clean up
-    await blob_store.delete(key)
+        await blob_store.put(key, updated_data)
+        assert await blob_store.get(key) == updated_data
+    finally:
+        # Clean up
+        await blob_store.delete(key)
 
 
 @pytest.mark.asyncio
@@ -150,21 +152,24 @@ async def test_blob_store_delete_is_idempotent(
     key = "contract-blobs/delete-target.bin"
     data = b"ephemeral-data"
 
-    await blob_store.put(key, data)
-    assert await blob_store.get(key) == data
+    try:
+        await blob_store.put(key, data)
+        assert await blob_store.get(key) == data
 
-    # Delete existing blob
-    await blob_store.delete(key)
+        # Delete existing blob
+        await blob_store.delete(key)
 
-    # Retrieval must fail
-    with pytest.raises(expected_error):
-        await blob_store.get(key)
+        # Retrieval must fail
+        with pytest.raises(expected_error):
+            await blob_store.get(key)
 
-    # Deleting an already-deleted key must not crash
-    await blob_store.delete(key)
+        # Deleting an already-deleted key must not crash
+        await blob_store.delete(key)
 
-    # Deleting an never-existent key must not crash
-    await blob_store.delete("contract-blobs/never-existed.bin")
+        # Deleting an never-existent key must not crash
+        await blob_store.delete("contract-blobs/never-existed.bin")
+    finally:
+        await blob_store.delete(key)
 
 
 @pytest.mark.asyncio
@@ -176,30 +181,35 @@ async def test_blob_store_content_addressing(blob_store: BlobStore) -> None:
     data1 = b"deterministic-content-addressed-payload-alpha"
     data2 = b"deterministic-content-addressed-payload-beta"
     expected_digest1 = hashlib.sha256(data1).hexdigest()
+    key1: str | None = None
+    key2: str | None = None
 
-    # Store with content addressing
-    key1 = await blob_store.put("blobs/cas", data1, content_addressing=True)
-    assert expected_digest1 in key1, (
-        f"Content-addressed key '{key1}' should incorporate content digest '{expected_digest1}'"
-    )
+    try:
+        # Store with content addressing
+        key1 = await blob_store.put("blobs/cas", data1, content_addressing=True)
+        assert expected_digest1 in key1, (
+            f"Content-addressed key '{key1}' should incorporate content digest '{expected_digest1}'"
+        )
 
-    # Re-putting identical content should return the same key
-    key1_repeat = await blob_store.put("blobs/cas", data1, content_addressing=True)
-    assert key1 == key1_repeat, (
-        f"Duplicate content write returned different key: {key1} vs {key1_repeat}"
-    )
+        # Re-putting identical content should return the same key
+        key1_repeat = await blob_store.put("blobs/cas", data1, content_addressing=True)
+        assert key1 == key1_repeat, (
+            f"Duplicate content write returned different key: {key1} vs {key1_repeat}"
+        )
 
-    # Putting different content must return a different key
-    key2 = await blob_store.put("blobs/cas", data2, content_addressing=True)
-    assert key1 != key2, "Different contents produced identical content-addressed keys"
+        # Putting different content must return a different key
+        key2 = await blob_store.put("blobs/cas", data2, content_addressing=True)
+        assert key1 != key2, "Different contents produced identical content-addressed keys"
 
-    # Both keys can be retrieved
-    assert await blob_store.get(key1) == data1
-    assert await blob_store.get(key2) == data2
-
-    # Clean up
-    await blob_store.delete(key1)
-    await blob_store.delete(key2)
+        # Both keys can be retrieved
+        assert await blob_store.get(key1) == data1
+        assert await blob_store.get(key2) == data2
+    finally:
+        # Clean up
+        if key1:
+            await blob_store.delete(key1)
+        if key2:
+            await blob_store.delete(key2)
 
 
 @pytest.mark.asyncio
@@ -218,10 +228,10 @@ async def test_blob_store_list_prefix_and_lexicographical_ordering(
         "contract-other-dir/z-file.txt",
     ]
 
-    for k in keys_to_create:
-        await blob_store.put(k, b"sample-bytes")
-
     try:
+        for k in keys_to_create:
+            await blob_store.put(k, b"sample-bytes")
+
         matching_keys: list[str] = []
         async for item in blob_store.list(prefix):
             matching_keys.append(item)
@@ -381,6 +391,26 @@ async def test_audit_sink_payload_immutability_caller_mutation(
         assert stored["details"]["role"] == "operator", (
             f"Audit sink allowed nested caller mutation: {stored['details']}"
         )
+    elif hasattr(audit_sink, "read_events") and callable(audit_sink.read_events):
+        res = audit_sink.read_events()
+        recorded_events = await res if asyncio.iscoroutine(res) else res
+        stored = next(
+            (
+                e
+                for e in recorded_events
+                if e.get("event_id") == "audit-tamper-check-001"
+            ),
+            None,
+        )
+        assert stored is not None, "Appended event was not recorded"
+        assert stored["actor"] == "legitimate_service", (
+            f"Audit sink allowed in-place caller mutation: {stored['actor']}"
+        )
+        assert stored["details"]["role"] == "operator", (
+            f"Audit sink allowed nested caller mutation: {stored['details']}"
+        )
+    else:
+        pytest.skip("No event_reader or inspection method provided for immutability verification")
 
 
 __all__ = [

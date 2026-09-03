@@ -10,6 +10,7 @@ optional `queue_config` fixtures and importing this suite:
 from __future__ import annotations
 
 import asyncio
+import contextlib
 from dataclasses import dataclass
 from typing import Any
 
@@ -29,6 +30,7 @@ class QueueConfig:
     dedup_window: float = 0.5
     dlq_suffix: str = ".dlq"
     empty_check_timeout: float = 0.15
+    redelivery_timeout: float = 2.0
 
 
 @pytest.fixture
@@ -123,6 +125,7 @@ async def test_queue_visibility_timeout_redelivery(
     before the visibility timeout expires, it is automatically redelivered.
     """
     vis_timeout = float(_get_config(queue_config, "visibility_timeout", 0.2))
+    redelivery_timeout = float(_get_config(queue_config, "redelivery_timeout", 2.0))
     topic = "contract-vis-delivery"
     group = "contract-vis-group"
 
@@ -141,7 +144,15 @@ async def test_queue_visibility_timeout_redelivery(
         await asyncio.sleep(vis_timeout + 0.15)
 
         # Message must now be redelivered
-        redelivered = await asyncio.wait_for(anext(consumer), timeout=2.0)
+        try:
+            redelivered = await asyncio.wait_for(
+                anext(consumer), timeout=redelivery_timeout
+            )
+        except TimeoutError:
+            pytest.fail(
+                f"Message was not redelivered after visibility timeout of {vis_timeout}s expired"
+            )
+
         assert redelivered.idempotency_key == "idemp-vis-001"
         assert redelivered.payload == {"action": "heartbeat"}
         await queue_adapter.ack(redelivered)
@@ -267,6 +278,7 @@ async def test_queue_idempotency_deduplication(
     await queue_adapter.publish(topic, msg2)
 
     consumer = queue_adapter.consume(topic, group)
+    pending_next: asyncio.Task[Message] | None = None
     try:
         delivered = await asyncio.wait_for(anext(consumer), timeout=2.0)
         assert delivered.idempotency_key == "idemp-dedup-key"
@@ -277,7 +289,7 @@ async def test_queue_idempotency_deduplication(
         async def _fetch_next() -> Message:
             return await anext(consumer)
 
-        pending_next: asyncio.Task[Message] = asyncio.create_task(_fetch_next())
+        pending_next = asyncio.create_task(_fetch_next())
         try:
             unexpected = await asyncio.wait_for(
                 asyncio.shield(pending_next), timeout=empty_check_timeout
@@ -297,6 +309,10 @@ async def test_queue_idempotency_deduplication(
             assert third_delivery.payload == {"val": "third"}
             await queue_adapter.ack(third_delivery)
     finally:
+        if pending_next is not None and not pending_next.done():
+            pending_next.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await pending_next
         if hasattr(consumer, "aclose"):
             await consumer.aclose()
 
