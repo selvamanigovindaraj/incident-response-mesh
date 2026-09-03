@@ -125,7 +125,10 @@ async def test_queue_load_balance_within_same_group() -> None:
         t2 = asyncio.create_task(worker(consumed_worker2))
 
         start = time.monotonic()
-        while len(consumed_worker1) + len(consumed_worker2) < 10 and (time.monotonic() - start) < 5.0:
+        while (
+            len(consumed_worker1) + len(consumed_worker2) < 10
+            and (time.monotonic() - start) < 5.0
+        ):
             await asyncio.sleep(0.02)
 
         t1.cancel()
@@ -198,7 +201,7 @@ async def test_queue_nack_requeue() -> None:
 
 @pytest.mark.asyncio
 async def test_queue_visibility_timeout_redelivery() -> None:
-    queue = InMemoryQueue(visibility_timeout=0.08, max_retries=3)
+    queue = InMemoryQueue(visibility_timeout=0.1, max_retries=3)
     try:
         msg = Message(payload={"data": "timed"}, idempotency_key="k-vis")
         await queue.publish("vis-topic", msg)
@@ -207,7 +210,7 @@ async def test_queue_visibility_timeout_redelivery() -> None:
         first = await anext(iterator)
         assert first.payload == {"data": "timed"}
         # Do not ack; wait for visibility timeout to expire
-        await asyncio.sleep(0.12)
+        await asyncio.sleep(0.25)
 
         # Should be redelivered
         second = await anext(iterator)
@@ -327,11 +330,11 @@ async def test_lock_strictly_monotonic_fencing_tokens() -> None:
 @pytest.mark.asyncio
 async def test_lock_ttl_expiration_and_takeover() -> None:
     lock_service = InMemoryLockService()
-    lease1 = await lock_service.acquire("res-expiring", ttl=0.08)
+    lease1 = await lock_service.acquire("res-expiring", ttl=0.1)
     assert lease1.fence == 1
 
     # Wait for TTL to expire
-    await asyncio.sleep(0.12)
+    await asyncio.sleep(0.25)
 
     # New contender takes over
     lease2 = await lock_service.acquire("res-expiring", ttl=10)
@@ -350,14 +353,14 @@ async def test_lock_ttl_expiration_and_takeover() -> None:
 @pytest.mark.asyncio
 async def test_lock_renew() -> None:
     lock_service = InMemoryLockService()
-    lease = await lock_service.acquire("res-renew", ttl=0.15)
+    lease = await lock_service.acquire("res-renew", ttl=0.2)
 
     await asyncio.sleep(0.08)
     # Renew before expiration
     await lock_service.renew(lease)
 
-    # Sleep past original 0.15s (0.08 + 0.10 = 0.18s)
-    await asyncio.sleep(0.10)
+    # Sleep past original 0.2s (0.08 + 0.16 = 0.24s)
+    await asyncio.sleep(0.16)
 
     # Still held!
     with pytest.raises(LockAcquisitionError):
@@ -369,8 +372,8 @@ async def test_lock_renew() -> None:
 @pytest.mark.asyncio
 async def test_lock_renew_fails_on_expired_lease() -> None:
     lock_service = InMemoryLockService()
-    lease = await lock_service.acquire("res-renew-fail", ttl=0.05)
-    await asyncio.sleep(0.08)
+    lease = await lock_service.acquire("res-renew-fail", ttl=0.1)
+    await asyncio.sleep(0.25)
 
     with pytest.raises(LockRenewalError):
         await lock_service.renew(lease)

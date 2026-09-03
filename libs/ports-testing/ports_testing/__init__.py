@@ -2,6 +2,8 @@
 Testing utilities, contract suites, and in-memory fakes for cloud-agnostic ports.
 """
 
+from ports_testing import contracts
+from ports_testing.contracts import LockConfig, QueueConfig
 from ports_testing.fakes import (
     BlobNotFoundError,
     FakeAuditSink,
@@ -33,7 +35,10 @@ __all__ = [
     "InMemoryQueue",
     "InMemorySecretStore",
     "LockAcquisitionError",
+    "LockConfig",
     "LockError",
     "LockRenewalError",
+    "QueueConfig",
     "SecretNotFoundError",
+    "contracts",
 ]

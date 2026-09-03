@@ -79,11 +79,12 @@ class InMemoryQueue:
         self._dedup_records: dict[tuple[str, str], float] = {}
 
         self._in_flight: dict[str, _InFlightDelivery] = {}
-        self._in_flight_by_key: dict[tuple[str, str, str], str] = {}
         self._delivery_attempts: dict[tuple[str, str, str], int] = defaultdict(int)
         self.dlq: dict[str, list[Message]] = defaultdict(list)
 
-    def _get_or_create_group_queue(self, topic: str, group: str) -> asyncio.Queue[Message]:
+    def _get_or_create_group_queue(
+        self, topic: str, group: str
+    ) -> asyncio.Queue[Message]:
         key = (topic, group)
         if key not in self._group_queues:
             q: asyncio.Queue[Message] = asyncio.Queue()
@@ -109,7 +110,9 @@ class InMemoryQueue:
         # Prune old dedup entries periodically to avoid memory growth
         if len(self._dedup_records) > 2000:
             cutoff = now - self.dedup_window
-            self._dedup_records = {k: ts for k, ts in self._dedup_records.items() if ts >= cutoff}
+            self._dedup_records = {
+                k: ts for k, ts in self._dedup_records.items() if ts >= cutoff
+            }
 
         self._published_history[topic].append(msg)
         for group in list(self._groups_by_topic[topic]):
@@ -140,25 +143,24 @@ class InMemoryQueue:
 
             async with self._lock:
                 self._in_flight[receipt_handle] = in_flight
-                self._in_flight_by_key[(topic, group, msg.idempotency_key)] = receipt_handle
                 timer_task = asyncio.create_task(
-                    self._visibility_timeout_handler(receipt_handle, self.visibility_timeout)
+                    self._visibility_timeout_handler(
+                        receipt_handle, self.visibility_timeout
+                    )
                 )
                 in_flight.timer_task = timer_task
 
             yield delivery_msg
 
-    async def _visibility_timeout_handler(self, receipt_handle: str, timeout: float) -> None:
+    async def _visibility_timeout_handler(
+        self, receipt_handle: str, timeout: float
+    ) -> None:
         try:
             await asyncio.sleep(timeout)
             async with self._lock:
                 in_flight = self._in_flight.pop(receipt_handle, None)
                 if in_flight is None:
                     return
-                self._in_flight_by_key.pop(
-                    (in_flight.topic, in_flight.group, in_flight.original_msg.idempotency_key),
-                    None,
-                )
                 attempt_key = (
                     in_flight.topic,
                     in_flight.group,
@@ -166,13 +168,16 @@ class InMemoryQueue:
                 )
                 self._delivery_attempts[attempt_key] += 1
                 if self._delivery_attempts[attempt_key] >= self.max_retries:
+                    self._delivery_attempts.pop(attempt_key, None)
                     await self._route_to_dlq(
                         in_flight.topic,
                         in_flight.original_msg,
                         reason="visibility_timeout_retries_exceeded",
                     )
                 else:
-                    q = self._get_or_create_group_queue(in_flight.topic, in_flight.group)
+                    q = self._get_or_create_group_queue(
+                        in_flight.topic, in_flight.group
+                    )
                     q.put_nowait(in_flight.original_msg)
         except asyncio.CancelledError:
             pass
@@ -187,19 +192,27 @@ class InMemoryQueue:
             if receipt_handle and receipt_handle in self._in_flight:
                 in_flight = self._in_flight.pop(receipt_handle)
             else:
-                # Fallback to match by idempotency key
+                msg_topic = msg.headers.get("_topic")
+                msg_group = msg.headers.get("_group")
+                # Fallback to match by idempotency key (scoped by topic and group if available)
                 for rh, item in list(self._in_flight.items()):
                     if item.original_msg.idempotency_key == msg.idempotency_key:
+                        if msg_topic and item.topic != msg_topic:
+                            continue
+                        if msg_group and item.group != msg_group:
+                            continue
                         in_flight = self._in_flight.pop(rh)
                         break
 
             if in_flight is not None:
                 if in_flight.timer_task and not in_flight.timer_task.done():
                     in_flight.timer_task.cancel()
-                self._in_flight_by_key.pop(
-                    (in_flight.topic, in_flight.group, in_flight.original_msg.idempotency_key),
-                    None,
+                attempt_key = (
+                    in_flight.topic,
+                    in_flight.group,
+                    in_flight.original_msg.idempotency_key,
                 )
+                self._delivery_attempts.pop(attempt_key, None)
 
     async def nack(self, msg: Message, requeue: bool = True) -> None:
         """
@@ -212,8 +225,15 @@ class InMemoryQueue:
             if receipt_handle and receipt_handle in self._in_flight:
                 in_flight = self._in_flight.pop(receipt_handle)
             else:
+                msg_topic = msg.headers.get("_topic")
+                msg_group = msg.headers.get("_group")
+                # Fallback to match by idempotency key (scoped by topic and group if available)
                 for rh, item in list(self._in_flight.items()):
                     if item.original_msg.idempotency_key == msg.idempotency_key:
+                        if msg_topic and item.topic != msg_topic:
+                            continue
+                        if msg_group and item.group != msg_group:
+                            continue
                         in_flight = self._in_flight.pop(rh)
                         break
 
@@ -222,30 +242,32 @@ class InMemoryQueue:
 
             if in_flight.timer_task and not in_flight.timer_task.done():
                 in_flight.timer_task.cancel()
-            self._in_flight_by_key.pop(
-                (in_flight.topic, in_flight.group, in_flight.original_msg.idempotency_key),
-                None,
-            )
 
+            attempt_key = (
+                in_flight.topic,
+                in_flight.group,
+                in_flight.original_msg.idempotency_key,
+            )
             if not requeue:
+                self._delivery_attempts.pop(attempt_key, None)
                 await self._route_to_dlq(
-                    in_flight.topic, in_flight.original_msg, reason="nack_without_requeue"
+                    in_flight.topic,
+                    in_flight.original_msg,
+                    reason="nack_without_requeue",
                 )
             else:
-                attempt_key = (
-                    in_flight.topic,
-                    in_flight.group,
-                    in_flight.original_msg.idempotency_key,
-                )
                 self._delivery_attempts[attempt_key] += 1
                 if self._delivery_attempts[attempt_key] >= self.max_retries:
+                    self._delivery_attempts.pop(attempt_key, None)
                     await self._route_to_dlq(
                         in_flight.topic,
                         in_flight.original_msg,
                         reason="nack_max_retries_exceeded",
                     )
                 else:
-                    q = self._get_or_create_group_queue(in_flight.topic, in_flight.group)
+                    q = self._get_or_create_group_queue(
+                        in_flight.topic, in_flight.group
+                    )
                     q.put_nowait(in_flight.original_msg)
 
     async def _route_to_dlq(self, topic: str, msg: Message, reason: str = "") -> None:
@@ -279,7 +301,7 @@ class InMemoryQueue:
                 if item.timer_task and not item.timer_task.done():
                     item.timer_task.cancel()
             self._in_flight.clear()
-            self._in_flight_by_key.clear()
+            self._delivery_attempts.clear()
 
 
 class InMemoryLockService:
@@ -294,9 +316,7 @@ class InMemoryLockService:
         self._active: dict[str, _ActiveLease] = {}
         self._token_to_resource: dict[str, str] = {}
 
-    async def acquire(
-        self, resource: str, ttl: float, timeout: float = 0.0
-    ) -> Lease:
+    async def acquire(self, resource: str, ttl: float, timeout: float = 0.0) -> Lease:
         """
         Attempts to acquire a lock on the given resource with the specified TTL.
         If timeout is <= 0.0, acquisition is non-blocking.
@@ -381,9 +401,7 @@ class InMemoryBlobStore:
         self._storage: dict[str, bytes] = {}
         self._lock = asyncio.Lock()
 
-    async def put(
-        self, key: str, data: bytes, content_addressing: bool = False
-    ) -> str:
+    async def put(self, key: str, data: bytes, content_addressing: bool = False) -> str:
         """
         Persists raw binary data. If content_addressing=True, derives key deterministically.
         """
@@ -421,9 +439,7 @@ class InMemoryBlobStore:
         Streams keys matching prefix in lexicographical order.
         """
         async with self._lock:
-            matching_keys = sorted(
-                [k for k in self._storage if k.startswith(prefix)]
-            )
+            matching_keys = sorted([k for k in self._storage if k.startswith(prefix)])
         for k in matching_keys:
             yield k
 
