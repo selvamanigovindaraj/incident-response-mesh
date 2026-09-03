@@ -70,7 +70,7 @@ class LockService(Protocol):
     Distributed lock port for mutual exclusion across mesh nodes.
     """
 
-    async def acquire(self, resource: str, ttl: int) -> Lease:
+    async def acquire(self, resource: str, ttl: float) -> Lease:
         """
         Attempts to acquire a mutually exclusive distributed lock on the specified resource.
 

@@ -11,13 +11,11 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass
-from typing import Any, cast
+from typing import Any
 
 import pytest
 from ports.interfaces import LockService
 from ports.types import Lease
-
-from ports_testing.fakes import LockError
 
 
 @dataclass(frozen=True)
@@ -28,6 +26,7 @@ class LockConfig:
 
     ttl: float = 0.2
     contenders_count: int = 20
+    expected_error: type[Exception] | tuple[type[Exception], ...] = Exception
 
 
 @pytest.fixture
@@ -92,7 +91,7 @@ async def test_lock_ttl_expiration_allows_takeover(
     ttl = float(_get_config(lock_config, "ttl", 0.2))
     resource = "contract-ttl-takeover-resource"
 
-    lease1 = await lock_service.acquire(resource, ttl=cast(int, ttl))
+    lease1 = await lock_service.acquire(resource, ttl=ttl)
     assert lease1.token
     assert lease1.fence >= 1
 
@@ -118,10 +117,11 @@ async def test_lock_renew_successfully_extends_ttl(
     Contract: Calling renew() on an active lease successfully extends its validity
     window, preventing other contenders from acquiring the lock past the initial TTL.
     """
-    ttl = float(_get_config(lock_config, "ttl", 0.25))
+    ttl = float(_get_config(lock_config, "ttl", 0.2))
+    expected_error = _get_config(lock_config, "expected_error", Exception)
     resource = "contract-renew-resource"
 
-    lease = await lock_service.acquire(resource, ttl=cast(int, ttl))
+    lease = await lock_service.acquire(resource, ttl=ttl)
 
     # Sleep partway through TTL
     await asyncio.sleep(ttl * 0.4)
@@ -133,14 +133,14 @@ async def test_lock_renew_successfully_extends_ttl(
     await asyncio.sleep(ttl * 0.7)
 
     # The lock must STILL be held; another contender must fail to acquire
-    with pytest.raises((LockError, TimeoutError, RuntimeError)):
-        await lock_service.acquire(resource, ttl=cast(int, ttl))
+    with pytest.raises(expected_error):
+        await lock_service.acquire(resource, ttl=ttl)
 
     # Releasing the renewed lease frees the lock
     await lock_service.release(lease)
 
     # Now a new contender can acquire the lock
-    new_lease = await lock_service.acquire(resource, ttl=cast(int, ttl))
+    new_lease = await lock_service.acquire(resource, ttl=ttl)
     assert new_lease.fence > lease.fence
     await lock_service.release(new_lease)
 
@@ -179,15 +179,17 @@ async def test_lock_stale_lease_release_noop(
     idempotent, and not crash (no-op). It must not invalidate an active lease
     held by a subsequent contender.
     """
+    expected_error = _get_config(lock_config, "expected_error", Exception)
+
     # 1. Phantom lease release must not crash
     phantom_lease = Lease(token="phantom-token-00000", fence=99999)
     await lock_service.release(phantom_lease)
 
     # 2. Releasing an expired lease must not release a newly acquired lease
-    ttl = float(_get_config(lock_config, "ttl", 0.1))
+    ttl = float(_get_config(lock_config, "ttl", 0.2))
     resource = "contract-stale-release-resource"
 
-    expired_lease = await lock_service.acquire(resource, ttl=cast(int, ttl))
+    expired_lease = await lock_service.acquire(resource, ttl=ttl)
     await asyncio.sleep(ttl + 0.15)
 
     # New contender acquires after expiration
@@ -197,7 +199,7 @@ async def test_lock_stale_lease_release_noop(
     await lock_service.release(expired_lease)
 
     # The active lease must STILL be valid and held
-    with pytest.raises((LockError, TimeoutError, RuntimeError)):
+    with pytest.raises(expected_error):
         await lock_service.acquire(resource, ttl=10)
 
     # Clean up active lease

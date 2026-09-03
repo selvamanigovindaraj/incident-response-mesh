@@ -28,6 +28,7 @@ class QueueConfig:
     max_retries: int = 2
     dedup_window: float = 0.5
     dlq_suffix: str = ".dlq"
+    empty_check_timeout: float = 0.15
 
 
 @pytest.fixture
@@ -159,6 +160,7 @@ async def test_queue_dlq_routing_after_max_retries(
     """
     max_retries = int(_get_config(queue_config, "max_retries", 2))
     dlq_suffix = str(_get_config(queue_config, "dlq_suffix", ".dlq"))
+    empty_check_timeout = float(_get_config(queue_config, "empty_check_timeout", 0.15))
     topic = "contract-dlq-delivery"
     dlq_topic = f"{topic}{dlq_suffix}"
     group = "contract-dlq-group"
@@ -178,7 +180,9 @@ async def test_queue_dlq_routing_after_max_retries(
 
         # Active queue must now be empty for this message
         try:
-            unexpected = await asyncio.wait_for(anext(consumer), timeout=0.15)
+            unexpected = await asyncio.wait_for(
+                anext(consumer), timeout=empty_check_timeout
+            )
             pytest.fail(
                 f"Message was not evicted to DLQ after {max_retries} failures: {unexpected}"
             )
@@ -252,6 +256,7 @@ async def test_queue_idempotency_deduplication(
     deduplication window are deduplicated, ensuring only a single delivery.
     """
     dedup_window = float(_get_config(queue_config, "dedup_window", 0.5))
+    empty_check_timeout = float(_get_config(queue_config, "empty_check_timeout", 0.15))
     topic = "contract-dedup-delivery"
     group = "contract-dedup-group"
 
@@ -267,36 +272,33 @@ async def test_queue_idempotency_deduplication(
         assert delivered.idempotency_key == "idemp-dedup-key"
         assert delivered.payload == {"val": "first"}
         await queue_adapter.ack(delivered)
-    finally:
-        if hasattr(consumer, "aclose"):
-            await consumer.aclose()
 
-    # Verify no duplicate message is delivered
-    consumer_dup = queue_adapter.consume(topic, group)
-    try:
-        unexpected = await asyncio.wait_for(anext(consumer_dup), timeout=0.15)
-        pytest.fail(f"Duplicate message was delivered: {unexpected}")
-    except TimeoutError:
-        pass  # Correctly deduplicated
-    finally:
-        if hasattr(consumer_dup, "aclose"):
-            await consumer_dup.aclose()
+        # Verify no duplicate message is delivered (reusing consumer iterator)
+        async def _fetch_next() -> Message:
+            return await anext(consumer)
 
-    # After dedup window passes, message with same key can be published again
-    if dedup_window > 0:
-        await asyncio.sleep(dedup_window + 0.15)
-        msg3 = Message(payload={"val": "third"}, idempotency_key="idemp-dedup-key")
-        await queue_adapter.publish(topic, msg3)
-
-        consumer_after = queue_adapter.consume(topic, group)
+        pending_next: asyncio.Task[Message] = asyncio.create_task(_fetch_next())
         try:
-            third_delivery = await asyncio.wait_for(anext(consumer_after), timeout=2.0)
+            unexpected = await asyncio.wait_for(
+                asyncio.shield(pending_next), timeout=empty_check_timeout
+            )
+            pytest.fail(f"Duplicate message was delivered: {unexpected}")
+        except TimeoutError:
+            pass  # Correctly deduplicated
+
+        # After dedup window passes, message with same key can be published again
+        if dedup_window > 0:
+            await asyncio.sleep(dedup_window + 0.15)
+            msg3 = Message(payload={"val": "third"}, idempotency_key="idemp-dedup-key")
+            await queue_adapter.publish(topic, msg3)
+
+            third_delivery = await asyncio.wait_for(pending_next, timeout=2.0)
             assert third_delivery.idempotency_key == "idemp-dedup-key"
             assert third_delivery.payload == {"val": "third"}
             await queue_adapter.ack(third_delivery)
-        finally:
-            if hasattr(consumer_after, "aclose"):
-                await consumer_after.aclose()
+    finally:
+        if hasattr(consumer, "aclose"):
+            await consumer.aclose()
 
 
 @pytest.mark.asyncio
