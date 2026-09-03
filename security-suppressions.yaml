@@ -76,3 +76,9 @@ suppressions:
     reason: "Upstream fix unavailable in Debian 13 base image (python:3.12-slim)"
     expires_on: "2026-10-02"
     suppressed_by: "secops"
+
+  - id: "CVE-2026-16742"
+    package: "libsystemd0"
+    reason: "Upstream fix unavailable in Debian 13 base image (python:3.12-slim)"
+    expires_on: "2026-10-02"
+    suppressed_by: "secops"
