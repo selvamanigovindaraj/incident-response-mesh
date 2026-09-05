@@ -3,10 +3,9 @@ from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from ports.interfaces import AuditSink, BlobStore, LockService, Queue, SecretStore
-
 from adapters.fs_blob_store import FsBlobStore
 from adapters.registry import AdapterRegistry
+from ports.interfaces import AuditSink, BlobStore, LockService, Queue, SecretStore
 
 REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
 POSTGRES_DSN = os.environ.get(

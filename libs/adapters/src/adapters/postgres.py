@@ -43,6 +43,7 @@ class PgAuditSink(AuditSink):
             result = await cur.fetchone()
             if result is None:
                 raise RuntimeError("Failed to retrieve sequence number after insert")
+            await conn.commit()
             return int(result[0])
 
     async def read_events(self) -> list[dict[str, Any]]:

@@ -50,7 +50,7 @@ class RedisStreamQueue(Queue):
                 return
 
         fields = self._serialize_message(msg)
-        await self._redis.xadd(topic, fields)  # type: ignore[arg-type]
+        await self._redis.xadd(topic, fields, maxlen=100000, approximate=True)  # type: ignore[arg-type, call-arg]
 
     async def consume(self, topic: str, group: str) -> AsyncIterator[Message]:
         consumer_name = f"consumer-{uuid.uuid4().hex}"
@@ -92,6 +92,7 @@ class RedisStreamQueue(Queue):
                             )
                             if msg_obj:
                                 yield msg_obj
+                    if cursor != "0-0" or claimed_messages:
                         continue
             except asyncio.CancelledError:
                 raise
@@ -134,7 +135,7 @@ class RedisStreamQueue(Queue):
         else:
             fields = payload
         dlq_topic = f"{topic}{self._dlq_suffix}"
-        await self._redis.xadd(dlq_topic, fields)  # type: ignore[arg-type]
+        await self._redis.xadd(dlq_topic, fields, maxlen=100000, approximate=True)  # type: ignore[arg-type, call-arg]
         await self._redis.xack(topic, group, msg_id)
         delivery_key = f"delivery_counts:{topic}:{group}:{msg_id}"
         await self._redis.delete(delivery_key)
