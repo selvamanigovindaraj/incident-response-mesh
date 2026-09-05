@@ -9,13 +9,14 @@ from redis.asyncio import Redis
 class LockError(Exception):
     pass
 
+
 class RedisLockService(LockService):
     """
     Redis implementation of the LockService port.
     Uses an atomic Lua script (SET NX PX + INCR) for mutual exclusion and strictly monotonic fencing tokens.
     Release and renew use atomic Lua scripts to prevent stale token invalidation.
     """
-    
+
     # Lua script to atomically acquire a lock and increment the fencing token
     ACQUIRE_SCRIPT: ClassVar[str] = """
     if redis.call("SET", KEYS[1], ARGV[1], "NX", "PX", ARGV[2]) then
@@ -76,9 +77,7 @@ class RedisLockService(LockService):
         px = int(ttl * 1000)
 
         # Atomically attempt to acquire the lock and increment the fencing token
-        fence = await self._acquire_script(
-            keys=[key, fence_key], args=[token, px]
-        )
+        fence = await self._acquire_script(keys=[key, fence_key], args=[token, px])
         if fence is None:
             raise LockError(f"Failed to acquire lock for resource: {resource}")
 
@@ -93,7 +92,7 @@ class RedisLockService(LockService):
 
         key = self._lock_key(resource)
         px = int(ttl * 1000)
-        
+
         result = await self._renew_script(keys=[key], args=[lease.token, px])
         if result == 0:
             raise LockError("Failed to renew lock (expired, stolen, or invalid token)")
@@ -104,8 +103,8 @@ class RedisLockService(LockService):
         except ValueError:
             # Releasing a phantom lease is a safe no-op per contract
             return
-            
+
         key = self._lock_key(resource)
-        
+
         # We don't care if it fails, as release must be idempotent/no-op for stale leases
         await self._release_script(keys=[key], args=[lease.token])

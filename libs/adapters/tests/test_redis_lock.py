@@ -3,7 +3,6 @@ from collections.abc import AsyncGenerator
 
 import pytest
 import pytest_asyncio
-from adapters.redis_lock import LockError, RedisLockService
 from ports_testing.contracts.lock import (
     LockConfig,
     test_lock_concurrency_twenty_contenders,  # noqa: F401
@@ -13,6 +12,8 @@ from ports_testing.contracts.lock import (
     test_lock_ttl_expiration_allows_takeover,  # noqa: F401
 )
 from redis.asyncio import Redis
+
+from adapters.redis_lock import LockError, RedisLockService
 
 REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
 
@@ -37,4 +38,3 @@ async def redis_client() -> AsyncGenerator[Redis, None]:
 @pytest.fixture
 def lock_service(redis_client: Redis) -> RedisLockService:
     return RedisLockService(redis_client)
-

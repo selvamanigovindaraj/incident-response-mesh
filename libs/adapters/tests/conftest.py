@@ -2,8 +2,9 @@ import os
 from collections.abc import AsyncGenerator
 
 import pytest_asyncio
-from adapters.postgres import PgAuditSink
 from psycopg_pool import AsyncConnectionPool
+
+from adapters.postgres import PgAuditSink
 
 # Use standard postgres env vars if available, else default to docker-compose settings
 POSTGRES_DSN = os.environ.get(

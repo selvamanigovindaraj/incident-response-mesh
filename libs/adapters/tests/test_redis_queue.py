@@ -4,7 +4,6 @@ from collections.abc import AsyncGenerator
 
 import pytest
 import pytest_asyncio
-from adapters.redis_queue import RedisStreamQueue
 from ports.types import Message
 from ports_testing.contracts.queue import (
     QueueConfig,  # noqa: F401
@@ -18,6 +17,8 @@ from ports_testing.contracts.queue import (
     test_queue_visibility_timeout_redelivery,  # noqa: F401
 )
 from redis.asyncio import Redis
+
+from adapters.redis_queue import RedisStreamQueue
 
 REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
 
@@ -93,4 +94,3 @@ async def test_delivery_key_scoped_by_topic_and_group(redis_client: Redis) -> No
 
     await queue.ack(delivered_b)
     assert not await redis_client.exists(delivery_key_b)
-

@@ -17,6 +17,10 @@ jobs:
         id: filter
         with:
           filters: |
+            libs_adapters:
+              - 'libs/adapters/**'
+              - 'pyproject.toml'
+              - 'uv.lock'
             libs_core:
               - 'libs/core/**'
               - 'pyproject.toml'
@@ -73,6 +77,29 @@ jobs:
     needs: detect-changes
     if: ${{ needs.detect-changes.outputs.packages != '[]' && needs.detect-changes.outputs.packages != '' }}
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: irm_user
+          POSTGRES_PASSWORD: irm_password
+          POSTGRES_DB: irm_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     strategy:
       matrix:
         package: ${{ fromJSON(needs.detect-changes.outputs.packages) }}

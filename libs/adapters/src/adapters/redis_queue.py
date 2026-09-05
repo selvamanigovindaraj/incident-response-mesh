@@ -27,9 +27,7 @@ class RedisStreamQueue(Queue):
     def _serialize_message(self, msg: Message) -> dict[str, str]:
         msg_dict = msg.model_dump()
         headers = {
-            k: v
-            for k, v in msg_dict["headers"].items()
-            if not k.startswith("_redis_")
+            k: v for k, v in msg_dict["headers"].items() if not k.startswith("_redis_")
         }
         return {
             "payload": json.dumps(msg_dict["payload"]),
@@ -209,4 +207,3 @@ class RedisStreamQueue(Queue):
                 return
 
         await self._route_to_dlq(topic, group, msg_id, msg)
-
