@@ -1,7 +1,7 @@
 [project]
 name = "adapters"
 version = "0.1.0"
-description = "Add your description here"
+description = "Adapter implementations for ports interfaces"
 readme = "README.md"
 authors = [
     { name = "selvamanigovindaraj", email = "selvamanigovindaraj@outlook.com" }
