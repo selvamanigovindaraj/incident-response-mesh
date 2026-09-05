@@ -1,5 +1,9 @@
+import os
+from collections.abc import AsyncGenerator
+
 import pytest
 import pytest_asyncio
+from adapters.redis_lock import LockError, RedisLockService
 from ports_testing.contracts.lock import (
     LockConfig,
     test_lock_concurrency_twenty_contenders,  # noqa: F401
@@ -10,26 +14,27 @@ from ports_testing.contracts.lock import (
 )
 from redis.asyncio import Redis
 
-from adapters.redis_lock import LockError, RedisLockService
+REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
 
 
 @pytest.fixture
-def lock_config():
+def lock_config() -> LockConfig:
     return LockConfig(
         ttl=0.2,
-        contenders_count=10,
-        expected_error=LockError
+        expected_error=LockError,
     )
 
+
 @pytest_asyncio.fixture
-async def redis_client():
-    # Use standard local redis from docker-compose
-    client = Redis.from_url("redis://localhost:6379/0", decode_responses=True)
+async def redis_client() -> AsyncGenerator[Redis, None]:
+    client: Redis = Redis.from_url(REDIS_URL, decode_responses=True)
     await client.flushdb()
     yield client
     await client.flushdb()
     await client.aclose()
 
+
 @pytest.fixture
-def lock_service(redis_client):
+def lock_service(redis_client: Redis) -> RedisLockService:
     return RedisLockService(redis_client)
+
