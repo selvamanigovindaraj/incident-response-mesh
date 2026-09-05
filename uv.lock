@@ -38,6 +38,7 @@ dev = [
     { name = "mypy" },
     { name = "ports-testing" },
     { name = "pytest" },
+    { name = "pytest-cov" },
     { name = "ruff" },
 ]
 
@@ -54,6 +55,7 @@ dev = [
     { name = "mypy", specifier = ">=2.3.1" },
     { name = "ports-testing", editable = "libs/ports-testing" },
     { name = "pytest", specifier = ">=9.1.1" },
+    { name = "pytest-cov", specifier = ">=4.1.0" },
     { name = "ruff", specifier = ">=0.16.5" },
 ]
 
