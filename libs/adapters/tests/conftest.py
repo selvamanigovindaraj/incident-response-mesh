@@ -1,25 +1,26 @@
 import os
+from collections.abc import AsyncGenerator
 
-from psycopg_pool import AsyncConnectionPool
-
+import pytest_asyncio
 from adapters.postgres import PgAuditSink
+from psycopg_pool import AsyncConnectionPool
 
 # Use standard postgres env vars if available, else default to docker-compose settings
 POSTGRES_DSN = os.environ.get(
     "POSTGRES_DSN", "postgresql://irm_user:irm_password@localhost:5432/irm_db"
 )
 
-import pytest_asyncio
-
 
 @pytest_asyncio.fixture
-async def pg_pool():
+async def pg_pool() -> AsyncGenerator[AsyncConnectionPool, None]:
     async with AsyncConnectionPool(POSTGRES_DSN) as pool:
         yield pool
 
 
 @pytest_asyncio.fixture
-async def audit_sink(pg_pool: AsyncConnectionPool):
+async def audit_sink(
+    pg_pool: AsyncConnectionPool,
+) -> AsyncGenerator[PgAuditSink, None]:
     # Setup table for each test to ensure isolation
     async with pg_pool.connection() as conn:
         async with conn.cursor() as cur:
@@ -37,8 +38,7 @@ async def audit_sink(pg_pool: AsyncConnectionPool):
             await cur.execute(
                 "REVOKE UPDATE, DELETE ON TABLE audit_events FROM public;"
             )
-            # No need to commit if using psycopg3 autocommit or pool defaults,
-            # wait, by default psycopg3 does not autocommit unless configured. DDL might need commit.
+            # Commit explicitly so DDL changes persist across connections in the pool.
         await conn.commit()
 
     sink = PgAuditSink(pg_pool)
