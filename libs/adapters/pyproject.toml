@@ -1,0 +1,36 @@
+[project]
+name = "adapters"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "selvamanigovindaraj", email = "selvamanigovindaraj@outlook.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "ports",
+]
+
+[project.optional-dependencies]
+redis = [
+    "redis>=8.1.0",
+]
+postgres = [
+    "psycopg[pool]>=3.3.5",
+]
+
+[build-system]
+requires = ["uv_build>=0.11.32,<0.12.0"]
+build-backend = "uv_build"
+
+[tool.uv.sources]
+ports = { workspace = true }
+ports-testing = { workspace = true }
+
+[dependency-groups]
+dev = [
+    "mypy>=2.3.1",
+    "ports-testing",
+    "pytest>=9.1.1",
+    "ruff>=0.16.5",
+]
