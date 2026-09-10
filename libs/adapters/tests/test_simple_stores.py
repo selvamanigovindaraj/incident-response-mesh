@@ -1,8 +1,6 @@
 from pathlib import Path
 
 import pytest
-from adapters.env_secret_store import EnvSecretStore
-from adapters.fs_blob_store import FsBlobStore
 from ports_testing.contracts.stores import (
     SecretStoreConfig,
     test_blob_store_content_addressing,  # noqa: F401
@@ -14,6 +12,9 @@ from ports_testing.contracts.stores import (
     test_secret_store_get_existing,  # noqa: F401
     test_secret_store_get_nonexistent_raises,  # noqa: F401
 )
+
+from adapters.env_secret_store import EnvSecretStore
+from adapters.fs_blob_store import FsBlobStore
 
 
 @pytest.fixture

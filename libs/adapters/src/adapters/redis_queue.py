@@ -50,7 +50,7 @@ class RedisStreamQueue(Queue):
                 return
 
         fields = self._serialize_message(msg)
-        await self._redis.xadd(topic, fields, maxlen=100000, approximate=True)  # type: ignore[arg-type, call-arg]
+        await self._redis.xadd(topic, fields, maxlen=100000, approximate=True)  # type: ignore[arg-type]
 
     async def consume(self, topic: str, group: str) -> AsyncIterator[Message]:
         consumer_name = f"consumer-{uuid.uuid4().hex}"
@@ -96,7 +96,8 @@ class RedisStreamQueue(Queue):
                         continue
             except asyncio.CancelledError:
                 raise
-            except Exception:  # noqa: BLE001
+            except Exception as e:  # noqa: BLE001
+                print(f"ERROR IN CONSUMER: {e}")
                 await asyncio.sleep(0.1)
 
             # 2. XREADGROUP
@@ -120,7 +121,8 @@ class RedisStreamQueue(Queue):
                                 yield msg_obj
             except asyncio.CancelledError:
                 raise
-            except Exception:  # noqa: BLE001
+            except Exception as e:  # noqa: BLE001
+                print(f"ERROR IN CONSUMER: {e}")
                 await asyncio.sleep(0.1)
 
     async def _route_to_dlq(
@@ -135,7 +137,7 @@ class RedisStreamQueue(Queue):
         else:
             fields = payload
         dlq_topic = f"{topic}{self._dlq_suffix}"
-        await self._redis.xadd(dlq_topic, fields, maxlen=100000, approximate=True)  # type: ignore[arg-type, call-arg]
+        await self._redis.xadd(dlq_topic, fields, maxlen=100000, approximate=True)  # type: ignore[arg-type]
         await self._redis.xack(topic, group, msg_id)
         delivery_key = f"delivery_counts:{topic}:{group}:{msg_id}"
         await self._redis.delete(delivery_key)
