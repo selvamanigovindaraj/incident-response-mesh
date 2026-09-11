@@ -1,3 +1,7 @@
+.PHONY: config-docs
+config-docs:
+	cd libs/config && uv run python -m config.docs > ../../docs/config.md
+
 .PHONY: check-prereqs
 check-prereqs:
 	@command -v docker >/dev/null 2>&1 || { echo >&2 "docker is required but not installed. Aborting."; exit 1; }

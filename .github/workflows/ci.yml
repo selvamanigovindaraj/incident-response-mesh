@@ -19,6 +19,11 @@ jobs:
           filters: |
             libs_adapters:
               - 'libs/adapters/**'
+              - 'libs/config/**'
+              - 'pyproject.toml'
+              - 'uv.lock'
+            libs_config:
+              - 'libs/config/**'
               - 'pyproject.toml'
               - 'uv.lock'
             libs_core:
@@ -27,10 +32,12 @@ jobs:
               - 'uv.lock'
             services_hello_world:
               - 'services/hello-world/**'
+              - 'libs/config/**'
               - 'pyproject.toml'
               - 'uv.lock'
             services_scenario_runner:
               - 'services/scenario-runner/**'
+              - 'libs/config/**'
               - 'pyproject.toml'
               - 'uv.lock'
             security:
@@ -136,6 +143,8 @@ jobs:
 
       - name: Test
         working-directory: ${{ env.PKG_PATH }}
+        env:
+          APP_ENV: ci
         run: uv run pytest --cov=. --cov-fail-under=80
 
   docker-build:

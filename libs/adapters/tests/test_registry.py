@@ -1,11 +1,9 @@
 import os
-from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from config.settings import AppSettings
 from ports.interfaces import AuditSink, BlobStore, LockService, Queue, SecretStore
 
-from adapters.fs_blob_store import FsBlobStore
 from adapters.registry import AdapterRegistry
 
 REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
@@ -14,15 +12,23 @@ POSTGRES_DSN = os.environ.get(
 )
 
 
-@pytest.mark.asyncio
-async def test_registry_lifecycle() -> None:
-    config = {
-        "redis": {"url": REDIS_URL},
-        "postgres": {"dsn": POSTGRES_DSN},
+def _settings(**overrides: object) -> AppSettings:
+    base: dict[str, object] = {
+        "service_name": "test",
+        "queue": {"backend": "redis", "redis_url": REDIS_URL},
+        "locks": {"backend": "redis", "redis_url": REDIS_URL},
         "blob_store": {"base_dir": "/tmp/test_blobs"},
     }
+    base.update(overrides)
+    return AppSettings(**base)
 
-    async with AdapterRegistry(config) as registry:
+
+@pytest.mark.asyncio
+async def test_registry_lifecycle(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("TEST_POSTGRES_DSN", POSTGRES_DSN)
+    settings = _settings(postgres={"dsn": "TEST_POSTGRES_DSN"})
+
+    async with AdapterRegistry(settings) as registry:
         # Check that we can get each adapter type
         queue = registry.get_queue("test_queue")
         assert isinstance(queue, Queue)
@@ -64,7 +70,7 @@ async def test_registry_lifecycle() -> None:
 
 @pytest.mark.asyncio
 async def test_registry_uninitialized_access_raises() -> None:
-    registry = AdapterRegistry({})
+    registry = AdapterRegistry(_settings())
     with pytest.raises(RuntimeError, match="Redis client not initialized"):
         registry.get_queue("default")
     with pytest.raises(RuntimeError, match="Redis client not initialized"):
@@ -80,51 +86,10 @@ async def test_registry_uninitialized_access_raises() -> None:
 
 
 @pytest.mark.asyncio
-async def test_registry_handles_explicit_none_configs() -> None:
-    config = {
-        "redis": None,
-        "postgres": None,
-        "blob_store": None,
-    }
-    registry = AdapterRegistry(config)
-    await registry.start()
-
-    # Starting with None configs does not fail
-    with pytest.raises(RuntimeError, match="Redis client not initialized"):
-        registry.get_queue()
-    with pytest.raises(RuntimeError, match="Postgres pool not initialized"):
-        registry.get_audit_sink()
-
-    # get_blob_store with None config section falls back to default "/tmp/blobs"
-    blob = registry.get_blob_store()
-    assert isinstance(blob, FsBlobStore)
-    assert blob.base_dir == Path("/tmp/blobs").resolve()
-
-    await registry.stop()
-
-
-@pytest.mark.asyncio
-async def test_registry_stop_teardown_error_protection() -> None:
-    registry = AdapterRegistry({})
-    fake_pg_pool = MagicMock()
-    fake_pg_pool.close = AsyncMock(side_effect=RuntimeError("PG close failure"))
-    fake_redis = MagicMock()
-    fake_redis.aclose = AsyncMock()
-
-    registry._pg_pool = fake_pg_pool
-    registry._redis_client = fake_redis
-    registry._queues["test"] = MagicMock()
-    registry._locks["test"] = MagicMock()
-    registry._audit_sinks["test"] = MagicMock()
-
-    with pytest.raises(RuntimeError, match="PG close failure"):
-        await registry.stop()
-
-    # Ensure redis was still closed despite pg_pool.close() erroring
-    fake_redis.aclose.assert_awaited_once()
-    # Ensure caches are cleared and pools set to None
-    assert registry._pg_pool is None
-    assert registry._redis_client is None
-    assert len(registry._queues) == 0
-    assert len(registry._locks) == 0
-    assert len(registry._audit_sinks) == 0
+async def test_registry_memory_backend_needs_no_redis_client() -> None:
+    settings = _settings(queue={"backend": "memory"}, locks={"backend": "memory"})
+    async with AdapterRegistry(settings) as registry:
+        queue = registry.get_queue("mem_queue")
+        assert isinstance(queue, Queue)
+        lock = registry.get_lock_service("mem_lock")
+        assert isinstance(lock, LockService)

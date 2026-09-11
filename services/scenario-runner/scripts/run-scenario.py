@@ -13,6 +13,7 @@ import time
 
 import requests
 import yaml
+from config.settings import load_settings
 
 try:
     from schema import ScenarioLabel
@@ -67,6 +68,8 @@ def check_alerts(expected, red_herrings):
 
 
 def main():
+    load_settings("scenario-runner")
+
     if len(sys.argv) < 2:
         print("Usage: python scripts/run-scenario.py <scenario_id>")
         sys.exit(1)
