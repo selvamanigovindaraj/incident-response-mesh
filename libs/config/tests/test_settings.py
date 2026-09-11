@@ -58,3 +58,33 @@ def test_repr_never_leaks_resolved_secret_value(monkeypatch) -> None:
     settings = AppSettings(service_name="test-service")
     assert "hunter2" not in repr(settings)
     assert "SecretRef" in repr(settings)
+
+
+def test_select_env_file_defaults_to_local(monkeypatch) -> None:
+    from config.settings import _select_env_file
+
+    monkeypatch.delenv("APP_ENV", raising=False)
+    assert _select_env_file().endswith("config/env/local.env")
+
+
+def test_select_env_file_respects_app_env(monkeypatch) -> None:
+    from config.settings import _select_env_file
+
+    monkeypatch.setenv("APP_ENV", "ci")
+    assert _select_env_file().endswith("config/env/ci.env")
+
+
+def test_ci_env_overlay_is_applied_when_app_env_is_ci(monkeypatch) -> None:
+    monkeypatch.setenv("APP_ENV", "ci")
+    monkeypatch.delenv("QUEUE__BACKEND", raising=False)
+    monkeypatch.delenv("QUEUE__REDIS_URL", raising=False)
+    settings = AppSettings(service_name="test-service")
+    assert settings.queue.backend == "redis"
+    assert settings.queue.redis_url == "redis://localhost:6379/0"
+
+
+def test_real_env_var_overrides_env_file(monkeypatch) -> None:
+    monkeypatch.setenv("APP_ENV", "ci")
+    monkeypatch.setenv("QUEUE__BACKEND", "memory")
+    settings = AppSettings(service_name="test-service")
+    assert settings.queue.backend == "memory"

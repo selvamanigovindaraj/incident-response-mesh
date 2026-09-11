@@ -1,11 +1,21 @@
 from __future__ import annotations
 
-from typing import Literal
+import os
+from pathlib import Path
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from config.secrets import SecretRef
+
+# libs/config/config/settings.py lives at <repo_root>/libs/config/config/settings.py
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+
+
+def _select_env_file() -> str:
+    app_env = os.environ.get("APP_ENV", "local")
+    return str(_REPO_ROOT / "config" / "env" / f"{app_env}.env")
 
 
 class QueueSettings(BaseModel):
@@ -66,3 +76,9 @@ class AppSettings(BaseSettings):
     postgres: PostgresSettings = Field(default_factory=PostgresSettings)
     llm: LLMSettings = Field(default_factory=LLMSettings)
     observability: ObservabilitySettings = Field(default_factory=ObservabilitySettings)
+
+    def __init__(self, **kwargs: Any) -> None:
+        # Resolve the env overlay file fresh on every instantiation (rather than
+        # once at class-definition time) so APP_ENV changes take effect per-call.
+        kwargs.setdefault("_env_file", _select_env_file())
+        super().__init__(**kwargs)
