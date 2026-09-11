@@ -542,6 +542,9 @@ wheels = [
 name = "incident-response-mesh"
 version = "0.1.0"
 source = { virtual = "." }
+dependencies = [
+    { name = "config" },
+]
 
 [package.dev-dependencies]
 dev = [
@@ -550,6 +553,7 @@ dev = [
 ]
 
 [package.metadata]
+requires-dist = [{ name = "config", editable = "libs/config" }]
 
 [package.metadata.requires-dev]
 dev = [
@@ -1320,6 +1324,7 @@ name = "scenario-runner"
 version = "0.1.0"
 source = { editable = "services/scenario-runner" }
 dependencies = [
+    { name = "config" },
     { name = "pydantic" },
     { name = "pyyaml" },
     { name = "requests" },
@@ -1337,6 +1342,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "config", editable = "libs/config" },
     { name = "pydantic", specifier = ">=2.0.0" },
     { name = "pyyaml", specifier = ">=6.0" },
     { name = "requests", specifier = ">=2.31.0" },

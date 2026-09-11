@@ -20,6 +20,7 @@ from pathlib import Path
 from typing import Any
 
 import yaml
+from config.settings import load_settings
 
 # Ratchet date: 14 days from initial policy establishment on 2026-09-02
 RATCHET_DATE = date(2026, 9, 16)
@@ -460,6 +461,8 @@ def audit(
 
 def main() -> int:
     """CLI entrypoint."""
+    load_settings("security-audit")
+
     parser = argparse.ArgumentParser(
         description="Security Audit Wrapper (pip-audit + trivy)"
     )
