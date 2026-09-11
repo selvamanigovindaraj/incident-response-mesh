@@ -1,3 +1,8 @@
+from __future__ import annotations
+
+import pytest
+from pydantic import ValidationError
+
 from config.settings import AppSettings
 
 
@@ -8,14 +13,11 @@ def test_app_settings_requires_service_name() -> None:
 
 
 def test_app_settings_missing_service_name_raises() -> None:
-    import pytest
-    from pydantic import ValidationError
-
     with pytest.raises(ValidationError):
-        AppSettings()  # type: ignore[call-arg]
+        AppSettings()
 
 
-def test_app_settings_defaults_use_memory_backends(monkeypatch) -> None:
+def test_app_settings_defaults_use_memory_backends(monkeypatch: pytest.MonkeyPatch) -> None:
     for var in ("QUEUE__BACKEND", "LOCKS__BACKEND"):
         monkeypatch.delenv(var, raising=False)
     settings = AppSettings(service_name="test-service")
@@ -24,10 +26,7 @@ def test_app_settings_defaults_use_memory_backends(monkeypatch) -> None:
     assert settings.postgres.dsn is None
 
 
-def test_queue_backend_redis_requires_redis_url(monkeypatch) -> None:
-    import pytest
-    from pydantic import ValidationError
-
+def test_queue_backend_redis_requires_redis_url(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("QUEUE__BACKEND", "redis")
     monkeypatch.delenv("QUEUE__REDIS_URL", raising=False)
     with pytest.raises(ValidationError) as exc_info:
@@ -35,7 +34,7 @@ def test_queue_backend_redis_requires_redis_url(monkeypatch) -> None:
     assert "queue.redis_url" in str(exc_info.value)
 
 
-def test_queue_backend_redis_with_url_succeeds(monkeypatch) -> None:
+def test_queue_backend_redis_with_url_succeeds(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("QUEUE__BACKEND", "redis")
     monkeypatch.setenv("QUEUE__REDIS_URL", "redis://localhost:6379/0")
     settings = AppSettings(service_name="test-service")
@@ -43,7 +42,7 @@ def test_queue_backend_redis_with_url_succeeds(monkeypatch) -> None:
     assert settings.queue.redis_url == "redis://localhost:6379/0"
 
 
-def test_postgres_dsn_parses_as_secret_ref(monkeypatch) -> None:
+def test_postgres_dsn_parses_as_secret_ref(monkeypatch: pytest.MonkeyPatch) -> None:
     from config.secrets import SecretRef
 
     monkeypatch.setenv("POSTGRES__DSN", "POSTGRES_DSN")
@@ -52,7 +51,7 @@ def test_postgres_dsn_parses_as_secret_ref(monkeypatch) -> None:
     assert settings.postgres.dsn.key == "POSTGRES_DSN"
 
 
-def test_repr_never_leaks_resolved_secret_value(monkeypatch) -> None:
+def test_repr_never_leaks_resolved_secret_value(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("POSTGRES__DSN", "POSTGRES_DSN")
     monkeypatch.setenv("POSTGRES_DSN", "postgresql://user:hunter2@host/db")
     settings = AppSettings(service_name="test-service")
@@ -60,21 +59,21 @@ def test_repr_never_leaks_resolved_secret_value(monkeypatch) -> None:
     assert "SecretRef" in repr(settings)
 
 
-def test_select_env_file_defaults_to_local(monkeypatch) -> None:
+def test_select_env_file_defaults_to_local(monkeypatch: pytest.MonkeyPatch) -> None:
     from config.settings import _select_env_file
 
     monkeypatch.delenv("APP_ENV", raising=False)
     assert _select_env_file().endswith("config/env/local.env")
 
 
-def test_select_env_file_respects_app_env(monkeypatch) -> None:
+def test_select_env_file_respects_app_env(monkeypatch: pytest.MonkeyPatch) -> None:
     from config.settings import _select_env_file
 
     monkeypatch.setenv("APP_ENV", "ci")
     assert _select_env_file().endswith("config/env/ci.env")
 
 
-def test_ci_env_overlay_is_applied_when_app_env_is_ci(monkeypatch) -> None:
+def test_ci_env_overlay_is_applied_when_app_env_is_ci(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("APP_ENV", "ci")
     monkeypatch.delenv("QUEUE__BACKEND", raising=False)
     monkeypatch.delenv("QUEUE__REDIS_URL", raising=False)
@@ -83,23 +82,23 @@ def test_ci_env_overlay_is_applied_when_app_env_is_ci(monkeypatch) -> None:
     assert settings.queue.redis_url == "redis://localhost:6379/0"
 
 
-def test_real_env_var_overrides_env_file(monkeypatch) -> None:
+def test_real_env_var_overrides_env_file(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("APP_ENV", "ci")
     monkeypatch.setenv("QUEUE__BACKEND", "memory")
     settings = AppSettings(service_name="test-service")
     assert settings.queue.backend == "memory"
 
 
-def test_load_settings_returns_valid_settings(monkeypatch) -> None:
+def test_load_settings_returns_valid_settings() -> None:
     from config.settings import load_settings
 
     settings = load_settings("my-service")
     assert settings.service_name == "my-service"
 
 
-def test_load_settings_exits_nonzero_with_field_named(monkeypatch, capsys) -> None:
-    import pytest
-
+def test_load_settings_exits_nonzero_with_field_named(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
     from config.settings import load_settings
 
     monkeypatch.setenv("QUEUE__BACKEND", "redis")

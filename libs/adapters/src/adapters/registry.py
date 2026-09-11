@@ -116,7 +116,9 @@ class AdapterRegistry:
     def get_blob_store(self, key: str = "default") -> BlobStore:
         """Get or instantiate an FsBlobStore."""
         if key not in self._blob_stores:
-            self._blob_stores[key] = FsBlobStore(base_dir=self._settings.blob_store.base_dir)
+            self._blob_stores[key] = FsBlobStore(
+                base_dir=self._settings.blob_store.base_dir
+            )
         return self._blob_stores[key]
 
     def get_audit_sink(self, key: str = "default") -> AuditSink:

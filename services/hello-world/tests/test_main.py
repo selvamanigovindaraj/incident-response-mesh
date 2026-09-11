@@ -9,7 +9,9 @@ def test_main(capsys):
     assert "Hello, world!" in captured.out
 
 
-def test_main_exits_nonzero_with_field_named_on_missing_config(monkeypatch, capsys):
+def test_main_exits_nonzero_with_field_named_on_missing_config(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
     monkeypatch.setenv("QUEUE__BACKEND", "redis")
     monkeypatch.delenv("QUEUE__REDIS_URL", raising=False)
 

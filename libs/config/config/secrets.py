@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING, Any
 from pydantic_core import core_schema
 
 if TYPE_CHECKING:
-    from pydantic import GetCoreSchemaHandler
     from ports.interfaces import SecretStore
+    from pydantic import GetCoreSchemaHandler
 
 
 class SecretRef:

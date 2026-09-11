@@ -7,7 +7,7 @@ from config.settings import AppSettings
 
 def _type_str(field_schema: dict[str, Any]) -> str:
     if "$ref" in field_schema:
-        return field_schema["$ref"].rsplit("/", 1)[-1]
+        return str(field_schema["$ref"]).rsplit("/", 1)[-1]
     if "anyOf" in field_schema:
         return " | ".join(_type_str(s) for s in field_schema["anyOf"])
     if field_schema.get("type") == "null":
@@ -27,7 +27,9 @@ def _render_model(name: str, model_schema: dict[str, Any], lines: list[str]) -> 
         is_required = "yes" if field_name in required else "no"
         default = field_schema.get("default", "")
         description = field_schema.get("description", "")
-        lines.append(f"| {field_name} | {type_str} | {is_required} | {default} | {description} |")
+        lines.append(
+            f"| {field_name} | {type_str} | {is_required} | {default} | {description} |"
+        )
     lines.append("")
 
 

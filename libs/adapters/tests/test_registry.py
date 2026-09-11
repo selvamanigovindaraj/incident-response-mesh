@@ -20,7 +20,7 @@ def _settings(**overrides: object) -> AppSettings:
         "blob_store": {"base_dir": "/tmp/test_blobs"},
     }
     base.update(overrides)
-    return AppSettings(**base)  # type: ignore[arg-type]
+    return AppSettings(**base)
 
 
 @pytest.mark.asyncio
@@ -87,9 +87,7 @@ async def test_registry_uninitialized_access_raises() -> None:
 
 @pytest.mark.asyncio
 async def test_registry_memory_backend_needs_no_redis_client() -> None:
-    settings = _settings(
-        queue={"backend": "memory"}, locks={"backend": "memory"}
-    )
+    settings = _settings(queue={"backend": "memory"}, locks={"backend": "memory"})
     async with AdapterRegistry(settings) as registry:
         queue = registry.get_queue("mem_queue")
         assert isinstance(queue, Queue)
