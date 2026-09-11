@@ -23,7 +23,9 @@ name = "adapters"
 version = "0.1.0"
 source = { editable = "libs/adapters" }
 dependencies = [
+    { name = "config" },
     { name = "ports" },
+    { name = "ports-testing" },
 ]
 
 [package.optional-dependencies]
@@ -37,7 +39,6 @@ redis = [
 [package.dev-dependencies]
 dev = [
     { name = "mypy" },
-    { name = "ports-testing" },
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "ruff" },
@@ -45,7 +46,9 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "config", editable = "libs/config" },
     { name = "ports", editable = "libs/ports" },
+    { name = "ports-testing", editable = "libs/ports-testing" },
     { name = "psycopg", extras = ["pool"], marker = "extra == 'postgres'", specifier = ">=3.3.5" },
     { name = "redis", marker = "extra == 'redis'", specifier = ">=8.1.0" },
 ]
@@ -54,7 +57,6 @@ provides-extras = ["redis", "postgres"]
 [package.metadata.requires-dev]
 dev = [
     { name = "mypy", specifier = ">=2.3.1" },
-    { name = "ports-testing", editable = "libs/ports-testing" },
     { name = "pytest", specifier = ">=9.1.1" },
     { name = "pytest-cov", specifier = ">=4.1.0" },
     { name = "ruff", specifier = ">=0.16.5" },

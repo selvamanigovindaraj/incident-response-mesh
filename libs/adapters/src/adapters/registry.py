@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, Self
+from typing import TYPE_CHECKING, Self
 
+from config.settings import AppSettings
 from ports.interfaces import AuditSink, BlobStore, LockService, Queue, SecretStore
 
 from adapters.env_secret_store import EnvSecretStore
@@ -17,8 +17,8 @@ if TYPE_CHECKING:
 class AdapterRegistry:
     """Central registry to manage adapter instances and their connection pools."""
 
-    def __init__(self, config: Mapping[str, Any]) -> None:
-        self._config = config
+    def __init__(self, settings: AppSettings) -> None:
+        self._settings = settings
         self._redis_client: Redis | None = None
         self._pg_pool: AsyncConnectionPool | None = None
 
@@ -29,22 +29,27 @@ class AdapterRegistry:
         self._secret_stores: dict[str, SecretStore] = {}
 
     async def start(self) -> None:
-        """Initialize connection pools based on config."""
-        if self._config.get("redis") is not None:
+        """Initialize connection pools based on settings."""
+        needs_redis = (
+            self._settings.queue.backend == "redis"
+            or self._settings.locks.backend == "redis"
+        )
+        if needs_redis:
             from redis.asyncio import Redis
 
-            redis_url = (self._config.get("redis") or {}).get(
-                "url", "redis://localhost:6379/0"
-            )
+            redis_url = self._settings.queue.redis_url or self._settings.locks.redis_url
+            if not redis_url:
+                raise RuntimeError(
+                    "A redis_url is required when queue.backend or locks.backend is 'redis'"
+                )
             self._redis_client = Redis.from_url(redis_url)
 
-        if self._config.get("postgres") is not None:
-            pg_dsn = (self._config.get("postgres") or {}).get("dsn")
-            if pg_dsn:
-                from psycopg_pool import AsyncConnectionPool
+        if self._settings.postgres.dsn is not None:
+            from psycopg_pool import AsyncConnectionPool
 
-                self._pg_pool = AsyncConnectionPool(pg_dsn, open=False)
-                await self._pg_pool.open()
+            dsn = await self._settings.postgres.dsn.resolve(self.get_secret_store())
+            self._pg_pool = AsyncConnectionPool(dsn, open=False)
+            await self._pg_pool.open()
 
     async def stop(self) -> None:
         """Close connection pools and clear cached instances."""
@@ -79,32 +84,39 @@ class AdapterRegistry:
         await self.stop()
 
     def get_queue(self, key: str = "default") -> Queue:
-        """Get or instantiate a RedisStreamQueue."""
+        """Get or instantiate a Queue per settings.queue.backend."""
         if key not in self._queues:
-            if not self._redis_client:
-                raise RuntimeError("Redis client not initialized")
-            from adapters.redis_queue import RedisStreamQueue
+            if self._settings.queue.backend == "memory":
+                from ports_testing.fakes import InMemoryQueue
 
-            self._queues[key] = RedisStreamQueue(self._redis_client)
+                self._queues[key] = InMemoryQueue()
+            else:
+                if not self._redis_client:
+                    raise RuntimeError("Redis client not initialized")
+                from adapters.redis_queue import RedisStreamQueue
+
+                self._queues[key] = RedisStreamQueue(self._redis_client)
         return self._queues[key]
 
     def get_lock_service(self, key: str = "default") -> LockService:
-        """Get or instantiate a RedisLockService."""
+        """Get or instantiate a LockService per settings.locks.backend."""
         if key not in self._locks:
-            if not self._redis_client:
-                raise RuntimeError("Redis client not initialized")
-            from adapters.redis_lock import RedisLockService
+            if self._settings.locks.backend == "memory":
+                from ports_testing.fakes import InMemoryLockService
 
-            self._locks[key] = RedisLockService(self._redis_client)
+                self._locks[key] = InMemoryLockService()
+            else:
+                if not self._redis_client:
+                    raise RuntimeError("Redis client not initialized")
+                from adapters.redis_lock import RedisLockService
+
+                self._locks[key] = RedisLockService(self._redis_client)
         return self._locks[key]
 
     def get_blob_store(self, key: str = "default") -> BlobStore:
         """Get or instantiate an FsBlobStore."""
         if key not in self._blob_stores:
-            base_dir = (self._config.get("blob_store") or {}).get(
-                "base_dir", "/tmp/blobs"
-            )
-            self._blob_stores[key] = FsBlobStore(base_dir=base_dir)
+            self._blob_stores[key] = FsBlobStore(base_dir=self._settings.blob_store.base_dir)
         return self._blob_stores[key]
 
     def get_audit_sink(self, key: str = "default") -> AuditSink:
