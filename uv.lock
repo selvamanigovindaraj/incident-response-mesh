@@ -506,6 +506,9 @@ wheels = [
 name = "hello-world"
 version = "0.1.0"
 source = { editable = "services/hello-world" }
+dependencies = [
+    { name = "config" },
+]
 
 [package.dev-dependencies]
 dev = [
@@ -516,6 +519,7 @@ dev = [
 ]
 
 [package.metadata]
+requires-dist = [{ name = "config", editable = "libs/config" }]
 
 [package.metadata.requires-dev]
 dev = [
