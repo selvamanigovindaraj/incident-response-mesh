@@ -33,7 +33,7 @@
 **Interfaces:**
 - Produces: `config.settings.AppSettings` — a `pydantic_settings.BaseSettings` subclass with fields `app_env: Literal["local", "ci", "cluster"] = "local"` and `service_name: str` (required, no default).
 
-- [ ] **Step 1: Create the package manifest**
+- [x] **Step 1: Create the package manifest**
 
 ```toml
 # libs/config/pyproject.toml
@@ -74,7 +74,7 @@ Also create a one-line `libs/config/README.md`:
 Typed configuration schema (pydantic-settings) shared by every Incident Response Mesh service.
 ```
 
-- [ ] **Step 2: Write the failing test for a minimal `AppSettings`**
+- [x] **Step 2: Write the failing test for a minimal `AppSettings`**
 
 ```python
 # libs/config/tests/test_settings.py
@@ -95,12 +95,12 @@ def test_app_settings_missing_service_name_raises() -> None:
         AppSettings()  # type: ignore[call-arg]
 ```
 
-- [ ] **Step 3: Run the test to verify it fails**
+- [x] **Step 3: Run the test to verify it fails**
 
 Run: `cd libs/config && uv sync --all-extras && uv run pytest -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'config.settings'` (or similar) since `settings.py` doesn't exist yet.
 
-- [ ] **Step 4: Write the minimal `AppSettings`**
+- [x] **Step 4: Write the minimal `AppSettings`**
 
 ```python
 # libs/config/config/__init__.py
@@ -125,12 +125,12 @@ class AppSettings(BaseSettings):
     service_name: str
 ```
 
-- [ ] **Step 5: Run the test to verify it passes**
+- [x] **Step 5: Run the test to verify it passes**
 
 Run: `cd libs/config && uv run pytest -v`
 Expected: PASS (2 tests)
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add libs/config
@@ -149,7 +149,7 @@ git commit -m "feat(config): scaffold libs/config package with minimal AppSettin
 - Consumes: nothing new (uses only stdlib + `pydantic_core`).
 - Produces: `config.secrets.SecretRef` — usable directly as a pydantic field type. Constructed from a plain non-empty string (the reference *key*, e.g. an env var name or vault path — never the secret value itself). `repr(ref)` and `str(ref)` return `SecretRef('<key>', value=***)`. `await ref.resolve(store)` calls `store.get(ref.key)` where `store` is any object satisfying `ports.interfaces.SecretStore` (`async def get(self, key: str) -> str`).
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```python
 # libs/config/tests/test_secrets.py
@@ -204,12 +204,12 @@ def test_secret_ref_validates_from_plain_string_via_pydantic() -> None:
     assert "SecretRef" in repr(holder)
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `cd libs/config && uv run pytest tests/test_secrets.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'config.secrets'`
 
-- [ ] **Step 3: Implement `SecretRef`**
+- [x] **Step 3: Implement `SecretRef`**
 
 ```python
 # libs/config/config/secrets.py
@@ -271,12 +271,12 @@ class SecretRef:
         return cls(value)
 ```
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `cd libs/config && uv run pytest tests/test_secrets.py -v`
 Expected: PASS (5 tests)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add libs/config
@@ -295,7 +295,7 @@ git commit -m "feat(config): add SecretRef type with masked repr and lazy resolv
 - Consumes: `config.secrets.SecretRef` (Task 2).
 - Produces: `config.settings.QueueSettings`, `LocksSettings`, `BlobStoreSettings`, `PostgresSettings`, `LLMSettings`, `ObservabilitySettings` — all plain `pydantic.BaseModel`s with sensible defaults so `AppSettings(service_name=...)` succeeds with zero other env vars set. `AppSettings` gains fields `queue: QueueSettings`, `locks: LocksSettings`, `blob_store: BlobStoreSettings`, `postgres: PostgresSettings`, `llm: LLMSettings`, `observability: ObservabilitySettings`, each defaulting to `Field(default_factory=<Model>)`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```python
 # libs/config/tests/test_settings.py — add these to the existing file
@@ -344,12 +344,12 @@ def test_repr_never_leaks_resolved_secret_value(monkeypatch) -> None:
     assert "SecretRef" in repr(settings)
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `cd libs/config && uv run pytest tests/test_settings.py -v`
 Expected: FAIL — `AttributeError: 'AppSettings' object has no attribute 'queue'` (and similar)
 
-- [ ] **Step 3: Implement the subsystem models and wire them into `AppSettings`**
+- [x] **Step 3: Implement the subsystem models and wire them into `AppSettings`**
 
 ```python
 # libs/config/config/settings.py
@@ -423,12 +423,12 @@ class AppSettings(BaseSettings):
     observability: ObservabilitySettings = Field(default_factory=ObservabilitySettings)
 ```
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `cd libs/config && uv run pytest -v`
 Expected: PASS (all tests in the package)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add libs/config
@@ -449,7 +449,7 @@ git commit -m "feat(config): add per-subsystem settings models with cross-field 
 **Interfaces:**
 - Produces: `config.settings._select_env_file() -> str`, used as `SettingsConfigDict(env_file=_select_env_file())`. Reads process env var `APP_ENV` (default `"local"`) and resolves to `<repo_root>/config/env/<app_env>.env`.
 
-- [ ] **Step 1: Create the overlay files**
+- [x] **Step 1: Create the overlay files**
 
 ```bash
 # config/env/local.env
@@ -477,7 +477,7 @@ POSTGRES__DSN=POSTGRES_DSN
 
 `POSTGRES__DSN` in `ci.env`/`cluster.env` is a `SecretRef` *key* (the name of an env var the deployment sets separately), not a DSN itself — consistent with `EnvSecretStore.get(key)` reading `os.environ[key]`.
 
-- [ ] **Step 2: Write the failing test**
+- [x] **Step 2: Write the failing test**
 
 ```python
 # libs/config/tests/test_settings.py — add
@@ -511,12 +511,12 @@ def test_real_env_var_overrides_env_file(monkeypatch) -> None:
     assert settings.queue.backend == "memory"
 ```
 
-- [ ] **Step 3: Run tests to verify they fail**
+- [x] **Step 3: Run tests to verify they fail**
 
 Run: `cd libs/config && uv run pytest tests/test_settings.py -v`
 Expected: FAIL — `ImportError: cannot import name '_select_env_file'`
 
-- [ ] **Step 4: Implement `_select_env_file` and wire it into `model_config`**
+- [x] **Step 4: Implement `_select_env_file` and wire it into `model_config`**
 
 ```python
 # libs/config/config/settings.py — add near the top, after imports
@@ -542,12 +542,12 @@ Update `AppSettings.model_config`:
     )
 ```
 
-- [ ] **Step 5: Run tests to verify they pass**
+- [x] **Step 5: Run tests to verify they pass**
 
 Run: `cd libs/config && uv run pytest -v`
 Expected: PASS (all tests)
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add config libs/config
@@ -566,7 +566,7 @@ git commit -m "feat(config): add APP_ENV-selected .env overlay files"
 - Consumes: `AppSettings` (Task 3).
 - Produces: `config.settings.load_settings(service_name: str) -> AppSettings`. On success, returns a validated `AppSettings`. On `pydantic.ValidationError`, prints one line per invalid/missing field to stderr and raises `SystemExit(1)`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```python
 # libs/config/tests/test_settings.py — add
@@ -594,12 +594,12 @@ def test_load_settings_exits_nonzero_with_field_named(monkeypatch, capsys) -> No
     assert "redis_url" in captured.err
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `cd libs/config && uv run pytest tests/test_settings.py -v`
 Expected: FAIL — `ImportError: cannot import name 'load_settings'`
 
-- [ ] **Step 3: Implement `load_settings`**
+- [x] **Step 3: Implement `load_settings`**
 
 ```python
 # libs/config/config/settings.py — add at the bottom
@@ -625,12 +625,12 @@ def load_settings(service_name: str) -> AppSettings:
 
 (Move the `import sys` and `from pydantic import ValidationError` lines up to the top of the file alongside the other imports rather than inline — keep the file's import block at the top.)
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `cd libs/config && uv run pytest -v`
 Expected: PASS (all tests)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add libs/config
@@ -650,7 +650,7 @@ git commit -m "feat(config): add load_settings() fail-fast startup helper"
 - Consumes: `AppSettings.model_json_schema()` (standard pydantic method, no new interface).
 - Produces: `config.docs.render_markdown() -> str`, and a `python -m config.docs` CLI entrypoint that prints the rendered Markdown to stdout.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # libs/config/tests/test_docs.py
@@ -675,12 +675,12 @@ def test_render_markdown_includes_field_descriptions_when_present() -> None:
     assert "service_name" in output
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `cd libs/config && uv run pytest tests/test_docs.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'config.docs'`
 
-- [ ] **Step 3: Implement the renderer**
+- [x] **Step 3: Implement the renderer**
 
 ```python
 # libs/config/config/docs.py
@@ -740,12 +740,12 @@ if __name__ == "__main__":
     main()
 ```
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `cd libs/config && uv run pytest -v`
 Expected: PASS (all tests)
 
-- [ ] **Step 5: Add the `make config-docs` target**
+- [x] **Step 5: Add the `make config-docs` target**
 
 ```makefile
 # Makefile — add
@@ -754,12 +754,12 @@ config-docs:
 	cd libs/config && uv run python -m config.docs > ../../docs/config.md
 ```
 
-- [ ] **Step 6: Generate `docs/config.md` and verify it manually**
+- [x] **Step 6: Generate `docs/config.md` and verify it manually**
 
 Run: `make config-docs && cat docs/config.md`
 Expected: A Markdown file with an `AppSettings` section and one section per subsystem model (`QueueSettings`, `LocksSettings`, `BlobStoreSettings`, `PostgresSettings`, `LLMSettings`, `ObservabilitySettings`).
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add libs/config Makefile docs/config.md
@@ -780,7 +780,7 @@ git commit -m "feat(config): add config-docs schema-to-Markdown generator"
 - Consumes: `config.settings.AppSettings`, `QueueSettings`, `LocksSettings`, `PostgresSettings`, `BlobStoreSettings` (Task 3); `config.secrets.SecretRef.resolve()` (Task 2); `ports_testing.fakes.InMemoryQueue`, `ports_testing.fakes.InMemoryLockService` (existing).
 - Produces: `AdapterRegistry(settings: AppSettings)` — same public method names (`start`, `stop`, `get_queue`, `get_lock_service`, `get_blob_store`, `get_audit_sink`, `get_secret_store`) and return types as before; only the constructor's parameter type and the queue/lock backend selection logic change.
 
-- [ ] **Step 1: Promote `ports-testing` to a runtime dependency and add `config`**
+- [x] **Step 1: Promote `ports-testing` to a runtime dependency and add `config`**
 
 ```toml
 # libs/adapters/pyproject.toml
@@ -827,7 +827,7 @@ dev = [
 
 (`ports-testing` moves from the `dev` group to `[project.dependencies]`; the `dev` group no longer lists it.)
 
-- [ ] **Step 2: Update `test_registry.py` to build `AppSettings` and expect backend switching (failing first)**
+- [x] **Step 2: Update `test_registry.py` to build `AppSettings` and expect backend switching (failing first)**
 
 ```python
 # libs/adapters/tests/test_registry.py
@@ -925,16 +925,16 @@ async def test_registry_memory_backend_needs_no_redis_client() -> None:
         assert isinstance(lock, LockService)
 ```
 
-- [ ] **Step 3: Update `conftest.py`'s `POSTGRES_DSN`-dependent fixtures if needed**
+- [x] **Step 3: Update `conftest.py`'s `POSTGRES_DSN`-dependent fixtures if needed**
 
 `conftest.py` already reads `POSTGRES_DSN` from the environment and constructs `PgAuditSink` directly against a raw pool — it is untouched by the registry's constructor signature change, so no edit is required here. Confirm by reading the file: `libs/adapters/tests/conftest.py` does not import `AdapterRegistry`.
 
-- [ ] **Step 4: Run tests to verify they fail**
+- [x] **Step 4: Run tests to verify they fail**
 
 Run: `cd libs/adapters && uv sync --all-extras && uv run pytest tests/test_registry.py -v`
 Expected: FAIL — `TypeError: AdapterRegistry.__init__() takes a Mapping, got AppSettings` (or similar type mismatch once `AdapterRegistry` still expects a `Mapping`)
 
-- [ ] **Step 5: Retype and update `AdapterRegistry`**
+- [x] **Step 5: Retype and update `AdapterRegistry`**
 
 ```python
 # libs/adapters/src/adapters/registry.py
@@ -1076,12 +1076,12 @@ class AdapterRegistry:
         return self._secret_stores[key]
 ```
 
-- [ ] **Step 6: Run tests to verify they pass**
+- [x] **Step 6: Run tests to verify they pass**
 
 Run: `cd libs/adapters && uv run pytest tests/test_registry.py -v`
 Expected: PASS (all tests, requires local `redis` and `postgres` via `docker-compose up -d redis postgres` from repo root)
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add libs/adapters
@@ -1098,7 +1098,7 @@ git commit -m "feat(adapters): retype AdapterRegistry to AppSettings with queue/
 **Interfaces:**
 - Consumes: `AdapterRegistry` (Task 7), `config.settings.AppSettings`, `ports.types.Message`.
 
-- [ ] **Step 1: Write the test**
+- [x] **Step 1: Write the test**
 
 ```python
 # libs/adapters/tests/test_backend_switching.py
@@ -1152,12 +1152,12 @@ async def test_lock_acquire_release_across_backends(backend: str) -> None:
         await lock_service.release(lease)
 ```
 
-- [ ] **Step 2: Run the test**
+- [x] **Step 2: Run the test**
 
 Run: `cd libs/adapters && uv run pytest tests/test_backend_switching.py -v`
 Expected: PASS (4 tests: 2 backends x 2 scenarios), proving `QUEUE__BACKEND`/`LOCKS__BACKEND` switch behavior with no call-site code changes.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add libs/adapters/tests/test_backend_switching.py
@@ -1176,7 +1176,7 @@ git commit -m "test(adapters): prove queue/lock backend switching requires zero 
 **Interfaces:**
 - Consumes: `config.settings.load_settings` (Task 5).
 
-- [ ] **Step 1: Add the `config` dependency**
+- [x] **Step 1: Add the `config` dependency**
 
 ```toml
 # services/hello-world/pyproject.toml
@@ -1204,7 +1204,7 @@ dev = [
 ]
 ```
 
-- [ ] **Step 2: Write the failing test for fail-fast behavior**
+- [x] **Step 2: Write the failing test for fail-fast behavior**
 
 ```python
 # services/hello-world/tests/test_main.py
@@ -1234,12 +1234,12 @@ def test_main_exits_nonzero_with_field_named_on_missing_config(monkeypatch, caps
     assert "redis_url" in captured.err
 ```
 
-- [ ] **Step 3: Run tests to verify the new one fails**
+- [x] **Step 3: Run tests to verify the new one fails**
 
 Run: `cd services/hello-world && uv sync && uv run pytest -v`
 Expected: `test_main_exits_nonzero_with_field_named_on_missing_config` FAILs — `main()` currently ignores env vars and returns `0`.
 
-- [ ] **Step 4: Wire `load_settings` into `main()`**
+- [x] **Step 4: Wire `load_settings` into `main()`**
 
 ```python
 # services/hello-world/hello_world/main.py
@@ -1256,12 +1256,12 @@ if __name__ == "__main__":
     raise SystemExit(main())
 ```
 
-- [ ] **Step 5: Run tests to verify both pass**
+- [x] **Step 5: Run tests to verify both pass**
 
 Run: `cd services/hello-world && uv run pytest -v`
 Expected: PASS (both tests)
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add services/hello-world
@@ -1281,7 +1281,7 @@ git commit -m "feat(hello-world): fail fast on invalid config via load_settings(
 **Interfaces:**
 - Consumes: `config.settings.load_settings` (Task 5).
 
-- [ ] **Step 1: Add `config` dependency to `scenario-runner`**
+- [x] **Step 1: Add `config` dependency to `scenario-runner`**
 
 ```toml
 # services/scenario-runner/pyproject.toml
@@ -1317,7 +1317,7 @@ dev = [
 ]
 ```
 
-- [ ] **Step 2: Call `load_settings` at the top of `run-scenario.py`'s `main()`**
+- [x] **Step 2: Call `load_settings` at the top of `run-scenario.py`'s `main()`**
 
 ```python
 # services/scenario-runner/scripts/run-scenario.py
@@ -1334,12 +1334,12 @@ def main():
     # ... rest of function unchanged
 ```
 
-- [ ] **Step 3: Run existing `scenario-runner` tests to confirm no regression**
+- [x] **Step 3: Run existing `scenario-runner` tests to confirm no regression**
 
 Run: `cd services/scenario-runner && uv sync && uv run pytest -v`
 Expected: PASS — all existing tests in `tests/test_run_scenario.py` still pass, since default settings (memory backends, no postgres) validate successfully with no new required env vars.
 
-- [ ] **Step 4: Add `config` dependency to the repo root `pyproject.toml`**
+- [x] **Step 4: Add `config` dependency to the repo root `pyproject.toml`**
 
 ```toml
 # pyproject.toml (repo root)
@@ -1370,7 +1370,7 @@ members = [
 ]
 ```
 
-- [ ] **Step 5: Call `load_settings` at the top of `security-audit.py`'s `main()`**
+- [x] **Step 5: Call `load_settings` at the top of `security-audit.py`'s `main()`**
 
 ```python
 # scripts/security-audit.py
@@ -1388,12 +1388,12 @@ def main() -> int:
     # ... rest of function unchanged
 ```
 
-- [ ] **Step 6: Run root and security-audit tests to confirm no regression**
+- [x] **Step 6: Run root and security-audit tests to confirm no regression**
 
 Run: `uv sync && uv run pytest tests/test_security_audit.py -v`
 Expected: PASS — `tests/test_security_audit.py` never calls `main()` directly (it tests individual functions via `importlib`), so this is unaffected; run it to confirm.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add services/scenario-runner scripts/security-audit.py pyproject.toml uv.lock
@@ -1409,7 +1409,7 @@ git commit -m "feat(config): wire scenario-runner and security-audit.py to load_
 
 **Interfaces:** None (CI configuration only).
 
-- [ ] **Step 1: Add a `libs_config` path filter and extend dependent filters**
+- [x] **Step 1: Add a `libs_config` path filter and extend dependent filters**
 
 ```yaml
 # .github/workflows/ci.yml — inside the `filters:` block under `detect-changes`
@@ -1443,7 +1443,7 @@ git commit -m "feat(config): wire scenario-runner and security-audit.py to load_
               - 'security-suppressions.yaml'
 ```
 
-- [ ] **Step 2: Set `APP_ENV=ci` for the test job so the `ci.env` overlay is exercised**
+- [x] **Step 2: Set `APP_ENV=ci` for the test job so the `ci.env` overlay is exercised**
 
 ```yaml
 # .github/workflows/ci.yml — inside the `test` job's steps
@@ -1454,12 +1454,12 @@ git commit -m "feat(config): wire scenario-runner and security-audit.py to load_
         run: uv run pytest --cov=. --cov-fail-under=80
 ```
 
-- [ ] **Step 3: Verify the workflow YAML is valid**
+- [x] **Step 3: Verify the workflow YAML is valid**
 
 Run: `python -c "import yaml; yaml.safe_load(open('.github/workflows/ci.yml'))"`
 Expected: No output (no exception raised) — confirms valid YAML syntax.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add .github/workflows/ci.yml
@@ -1474,12 +1474,12 @@ git commit -m "ci: test libs/config and exercise the ci.env overlay via APP_ENV"
 
 **Interfaces:** None.
 
-- [ ] **Step 1: Sync every workspace member**
+- [x] **Step 1: Sync every workspace member**
 
 Run: `uv sync --all-extras`
 Expected: Resolves cleanly with `config`, `ports-testing` (now a runtime dep of `adapters`), and `pydantic-settings` all present in `uv.lock`.
 
-- [ ] **Step 2: Run each affected package's test suite**
+- [x] **Step 2: Run each affected package's test suite**
 
 Run, from repo root, with `docker-compose up -d redis postgres` already running:
 ```bash
@@ -1491,12 +1491,12 @@ uv run pytest tests/test_security_audit.py -v
 ```
 Expected: All PASS.
 
-- [ ] **Step 3: Run `make config-docs` once more and confirm `docs/config.md` is current**
+- [x] **Step 3: Run `make config-docs` once more and confirm `docs/config.md` is current**
 
 Run: `make config-docs && git diff --stat docs/config.md`
 Expected: No diff (or only the expected additions from earlier tasks — regenerate and re-commit if the schema changed since Task 6).
 
-- [ ] **Step 4: Lint and typecheck every touched package**
+- [x] **Step 4: Lint and typecheck every touched package**
 
 Run:
 ```bash
@@ -1507,7 +1507,7 @@ Run:
 ```
 Expected: Clean (fix any findings inline before proceeding).
 
-- [ ] **Step 5: Commit any fixes**
+- [x] **Step 5: Commit any fixes**
 
 ```bash
 git add -A
