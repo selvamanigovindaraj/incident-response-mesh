@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import os
+import sys
 from pathlib import Path
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, ValidationError, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from config.secrets import SecretRef
@@ -82,3 +83,18 @@ class AppSettings(BaseSettings):
         # once at class-definition time) so APP_ENV changes take effect per-call.
         kwargs.setdefault("_env_file", _select_env_file())
         super().__init__(**kwargs)
+
+
+def load_settings(service_name: str) -> AppSettings:
+    """
+    Build and validate AppSettings for `service_name`, exiting the process
+    with a readable, field-named error report on any validation failure.
+    """
+    try:
+        return AppSettings(service_name=service_name)
+    except ValidationError as exc:
+        print(f"Configuration error for service '{service_name}':", file=sys.stderr)
+        for error in exc.errors():
+            loc = ".".join(str(part) for part in error["loc"])
+            print(f"  {loc}: {error['msg']}", file=sys.stderr)
+        raise SystemExit(1) from exc

@@ -88,3 +88,27 @@ def test_real_env_var_overrides_env_file(monkeypatch) -> None:
     monkeypatch.setenv("QUEUE__BACKEND", "memory")
     settings = AppSettings(service_name="test-service")
     assert settings.queue.backend == "memory"
+
+
+def test_load_settings_returns_valid_settings(monkeypatch) -> None:
+    from config.settings import load_settings
+
+    settings = load_settings("my-service")
+    assert settings.service_name == "my-service"
+
+
+def test_load_settings_exits_nonzero_with_field_named(monkeypatch, capsys) -> None:
+    import pytest
+
+    from config.settings import load_settings
+
+    monkeypatch.setenv("QUEUE__BACKEND", "redis")
+    monkeypatch.delenv("QUEUE__REDIS_URL", raising=False)
+
+    with pytest.raises(SystemExit) as exc_info:
+        load_settings("my-service")
+
+    assert exc_info.value.code == 1
+    captured = capsys.readouterr()
+    assert "queue" in captured.err
+    assert "redis_url" in captured.err
